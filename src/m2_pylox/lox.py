@@ -1,6 +1,9 @@
 import os
 import sys
 
+from m2_pylox.ast_printer import AstPrinter
+from m2_pylox.tokens import Token, TokenType as TT
+
 
 class Lox:
     def __init__(self) -> None:
@@ -21,15 +24,27 @@ class Lox:
 
     def run(self, source: str) -> None:
         from m2_pylox.scanner import Scanner
+        from m2_pylox.parser import Parser
 
         scanner = Scanner(source)
         tokens = scanner.scan_tokens()
 
-        for token in tokens:
-            print(token)
+        parser = Parser(tokens)
+        expression = parser.parse()
 
-    def error(self, line: int, message: str) -> None:
-        self.report(line, "", message)
+        if self.had_error or expression is None:
+            return
+
+        print(AstPrinter().print(expression))
+
+    def error(self, where: int | Token, message: str) -> None:
+        if isinstance(where, int):
+            self.report(where, "", message)
+        else:
+            if where.type == TT.EOF:
+                self.report(where.line, " at end", message)
+            else:
+                self.report(where.line, f" at '{where.lexeme}'", message)
 
     def report(self, line: int, where: str, message: str) -> None:
         print(f"[line {line}] Error{where}: {message}", file=sys.stderr)

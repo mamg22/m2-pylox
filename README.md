@@ -11,6 +11,9 @@ This project currently uses [`rye`](https://rye-up.com/) for dependency and proj
     - Nested C-Style comments (`/* ... /* ... */ ... */`)
 * Chapter 5
     - Reverse Polish Notation (RPN) AST printer
+* Chapter 6
+    - Generic method to handle left-associative binary operators (Not in challenges section, mentioned after defining `comparison()`)
+    - Comma operator `,`
 
 
 # Implementation differences
