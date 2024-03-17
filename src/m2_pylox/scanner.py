@@ -1,7 +1,7 @@
 from typing import Any
 
 from m2_pylox.lox import get_lox
-from m2_pylox.token import Token, TokenType as TT
+from m2_pylox.tokens import Token, TokenType as TT
 
 
 def is_ascii_digit(char: str) -> bool:
