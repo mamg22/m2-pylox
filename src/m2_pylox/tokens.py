@@ -14,6 +14,8 @@ class TokenType(Enum):
     SEMICOLON = ";"
     SLASH = "/"
     STAR = "*"
+    QUESTION = "?"
+    COLON = ":"
 
     BANG = "!"
     BANG_EQUAL = "!="
@@ -46,7 +48,6 @@ class TokenType(Enum):
     WHILE = "while"
 
     EOF = auto()
-
 
 class Token:
     def __init__(

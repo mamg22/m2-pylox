@@ -27,3 +27,9 @@ class Literal(Expr):
 class Unary(Expr):
     operator: Token
     right: Expr
+
+@dataclass(frozen=True)
+class Conditional(Expr):
+    condition: Expr
+    on_true: Expr
+    on_false: Expr

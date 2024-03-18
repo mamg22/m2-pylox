@@ -31,6 +31,10 @@ class AstPrinter(Visitor[str]):
     @visit.register
     def _(self, expr: ex.Unary) -> str:
         return self.parenthesize(expr.operator.lexeme, expr.right)
+    
+    @visit.register
+    def _(self, expr: ex.Conditional) -> str:
+        return self.parenthesize("cond", expr.condition, expr.on_true, expr.on_false)
 
     def parenthesize(self, name: str, *exprs: ex.Expr) -> str:
         content = " ".join([expr.accept(self) for expr in exprs])
@@ -73,7 +77,6 @@ class AstRPNPrinter(Visitor[str]):
             expr.right.accept(self),
             "u" + expr.operator.lexeme
         ])
-
 
 if __name__ == '__main__':
     from m2_pylox.tokens import Token, TokenType as TT

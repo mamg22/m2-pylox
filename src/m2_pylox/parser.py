@@ -24,7 +24,19 @@ class Parser:
         return self.comma()
 
     def comma(self) -> ex.Expr:
-        return self.handle_left_binary(self.equality, TT.COMMA)
+        return self.handle_left_binary(self.conditional, TT.COMMA)
+
+    def conditional(self) -> ex.Expr:
+        condition = self.equality()
+
+        if self.match(TT.QUESTION):
+            on_true = self.expression()
+            self.consume(TT.COLON, "Expected ':' after expression")
+            on_false = self.conditional()
+            return ex.Conditional(condition, on_true, on_false)
+        
+        return condition
+
 
     def equality(self) -> ex.Expr:
         return self.handle_left_binary(self.comparison, TT.BANG_EQUAL, TT.EQUAL_EQUAL)
