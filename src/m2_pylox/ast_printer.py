@@ -24,7 +24,7 @@ class AstPrinter(Visitor[str]):
     @visit.register
     def _(self, expr: ex.Literal) -> str:
         if expr.value is not None:
-            return str(expr.value)
+            return repr(expr.value)
         else:
             return "nil"
 

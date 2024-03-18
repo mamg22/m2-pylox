@@ -1,6 +1,6 @@
 import m2_pylox.expr as ex
 from m2_pylox.lox import get_lox
-from m2_pylox.tokens import Token, TokenType as TT
+from m2_pylox.tokens import Token, TokenType as TT, TokenGroup as TG
 
 
 class ParseError(Exception):
@@ -39,17 +39,17 @@ class Parser:
 
 
     def equality(self) -> ex.Expr:
-        return self.handle_left_binary(self.comparison, TT.BANG_EQUAL, TT.EQUAL_EQUAL)
+        return self.handle_left_binary(self.comparison, *TG.Equality)
     
     def comparison(self) -> ex.Expr:
-        return self.handle_left_binary(self.term, TT.GREATER, TT.GREATER_EQUAL, TT.LESS, TT.LESS_EQUAL)
+        return self.handle_left_binary(self.term, *TG.Comparison)
 
     def term(self) -> ex.Expr:
-        return self.handle_left_binary(self.factor, TT.MINUS, TT.PLUS)
+        return self.handle_left_binary(self.factor, *TG.Term)
     
 
     def factor(self) -> ex.Expr:
-        return self.handle_left_binary(self.unary, TT.SLASH, TT.STAR)
+        return self.handle_left_binary(self.unary, *TG.Factor)
 
     def unary(self) -> ex.Expr:
         if self.match(TT.BANG, TT.MINUS):
@@ -72,10 +72,24 @@ class Parser:
 
         if self.match(TT.LEFT_PAREN):
             expr = self.expression()
-            self.consume(TT.RIGHT_PAREN, "Expect ')' after expression.")
+            self.consume(TT.RIGHT_PAREN, "Expected ')' after expression.")
             return ex.Grouping(expr)
-        
-        raise self.error(self.peek(), "Expect expression.")
+
+        # Error productions
+        for token_group, matcher in (
+            (TG.Equality, self.comparison),
+            (TG.Comparison, self.term),
+            (TG.Term, self.factor),
+            (TG.Factor, self.primary),
+            ({TT.COMMA}, self.conditional),
+        ):
+            if self.match(*token_group):
+                tok = self.previous()
+                self.error(tok, "Expected expression before operator")
+                matcher()
+                return ex.Expr()
+
+        raise self.error(self.peek(), "Expected expression.")
 
     def handle_left_binary(self, matcher, *token_list) -> ex.Expr:
         expr = matcher()

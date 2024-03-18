@@ -49,6 +49,13 @@ class TokenType(Enum):
 
     EOF = auto()
 
+_TT = TokenType
+class TokenGroup:
+    Comparison = {_TT.GREATER, _TT.GREATER_EQUAL, _TT.LESS, _TT.LESS_EQUAL}
+    Equality = {_TT.EQUAL_EQUAL, _TT.BANG_EQUAL}
+    Factor = {_TT.STAR, _TT.SLASH}
+    Term = {_TT.PLUS, _TT.MINUS}
+
 class Token:
     def __init__(
         self, type: TokenType, lexeme: str, line: int, literal: Any = None
