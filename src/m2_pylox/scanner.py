@@ -1,6 +1,6 @@
 from typing import Any
 
-from m2_pylox.lox import get_lox
+from m2_pylox import lox
 from m2_pylox.tokens import Token, TokenType as TT
 
 
@@ -53,7 +53,7 @@ class Scanner:
             case "/" if self.match("*"):
                 self.block_comment()
             case "*" if self.match("/"):
-                get_lox().error(
+                lox.get_lox().error(
                     self.line, "Unexpected end of comment outside block comment"
                 )
             case (
@@ -72,7 +72,7 @@ class Scanner:
             case ch if is_identifier(ch) and not ch.isdigit():
                 self.identifier()
             case ch if ch not in " \r\t":
-                get_lox().error(self.line, f"Unexpected character `{ch}`")
+                lox.get_lox().error(self.line, f"Unexpected character `{ch}`")
                 
     def advance(self) -> str:
         ch = self.source[self.current]
@@ -105,7 +105,7 @@ class Scanner:
             self.advance()
 
         if self.at_end():
-            get_lox().error(self.line, "Unterminated string at end of file")
+            lox.get_lox().error(self.line, "Unterminated string at end of file")
             return
 
         self.advance()
@@ -145,4 +145,4 @@ class Scanner:
             elif ch == "\n":
                 self.line += 1
         else:
-            get_lox().error(self.line, "Unterminated block comment at end of file")
+            lox.get_lox().error(self.line, "Unterminated block comment at end of file")

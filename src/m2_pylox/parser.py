@@ -1,5 +1,5 @@
 import m2_pylox.expr as ex
-from m2_pylox.lox import get_lox
+from m2_pylox import lox
 from m2_pylox.tokens import Token, TokenType as TT, TokenGroup as TG
 
 
@@ -138,7 +138,7 @@ class Parser:
         return self.tokens[self.current - 1]
 
     def error(self, token: Token, message: str) -> ParseError:
-        get_lox().error(token, message)
+        lox.get_lox().error(token, message)
         return ParseError()
 
     def synchronize(self) -> None:

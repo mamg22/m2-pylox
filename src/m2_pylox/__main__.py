@@ -1,6 +1,6 @@
 import sys
 
-from m2_pylox.lox import get_lox
+from m2_pylox import lox as loxlib
 
 
 def main() -> None:
@@ -8,7 +8,7 @@ def main() -> None:
         print(f"Usage: {sys.argv[0]} [script]")
         sys.exit(64)
 
-    lox = get_lox()
+    lox = loxlib.get_lox()
 
     if len(sys.argv) == 2:
         lox.run_file(sys.argv[1])
