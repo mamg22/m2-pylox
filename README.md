@@ -14,6 +14,8 @@ This project currently uses [`rye`](https://rye-up.com/) for dependency and proj
 * Chapter 6
     - Generic method to handle left-associative binary operators (Not in challenges section, mentioned after defining `comparison()`)
     - Comma operator `,`
+    - Ternary operator `?:`
+    - Error productions for binary operators missing left side expression
 
 
 # Implementation differences
