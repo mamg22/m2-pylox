@@ -90,6 +90,8 @@ class Interpreter(Visitor[Any]):
                     type(left) == type(right)
                 ):
                     return left + right
+                elif isinstance(left, str) or isinstance(right, str):
+                    return self.stringify(left) + self.stringify(right)
                 else:
                     raise LoxRuntimeError(expr.operator,
                                           "Operands must be two numbers or two strings")
