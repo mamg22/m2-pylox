@@ -51,8 +51,16 @@ class Interpreter(Visitor[Any]):
         left = self.evaluate(expr.left)
         right = self.evaluate(expr.right)
 
-        if expr.operator.type in TG.Comparison | TG.Factor | {TT.MINUS}:
+        if expr.operator.type in TG.Factor | {TT.MINUS}:
             self.check_number_operands(expr.operator, left, right)
+        elif expr.operator.type in TG.Comparison:
+            if not type(left) == type(right):
+                raise LoxRuntimeError(expr.operator,
+                "Cannot compare, expressions are of different types")
+            elif not isinstance(left, float | str | bool):
+                raise LoxRuntimeError(expr.operator,
+                "Cannot compare, type is not orderable")
+                
 
         match expr.operator.type:
             case TT.BANG_EQUAL:

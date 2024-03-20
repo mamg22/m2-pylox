@@ -17,6 +17,7 @@ This project currently uses [`rye`](https://rye-up.com/) for dependency and proj
     - Ternary operator `?:`
     - Error productions for binary operators missing left side expression
 * Chapter 7
+    - Non-number comparisons. Only allowed between expressions of the same type, allowing numbers, strings and booleans.
     - Handle division by zero with a runtime error.
 
 
