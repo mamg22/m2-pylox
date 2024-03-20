@@ -70,6 +70,9 @@ class Interpreter(Visitor[Any]):
             case TT.MINUS:
                 return left - right
             case TT.SLASH:
+                if right == 0:
+                    raise LoxRuntimeError(expr.operator,
+                                          "Division by zero")
                 return left / right
             case TT.STAR:
                 return left * right

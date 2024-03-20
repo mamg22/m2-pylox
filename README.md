@@ -16,6 +16,8 @@ This project currently uses [`rye`](https://rye-up.com/) for dependency and proj
     - Comma operator `,`
     - Ternary operator `?:`
     - Error productions for binary operators missing left side expression
+* Chapter 7
+    - Handle division by zero with a runtime error.
 
 
 # Implementation differences
