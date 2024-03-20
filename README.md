@@ -4,7 +4,7 @@ This is a port of the tree-walking interpreter for the Lox programming language 
 
 This project currently uses [`rye`](https://rye-up.com/) for dependency and project management.
 
-# Implemented challenges
+# Implemented chapters and challenges
 
 * Chapter 4
     - C-Style comments (`/* ... */`)
