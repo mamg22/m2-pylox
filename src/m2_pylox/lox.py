@@ -1,13 +1,17 @@
 import os
 import sys
 
-from m2_pylox.ast_printer import AstPrinter
+from m2_pylox.interpreter import Interpreter, LoxRuntimeError
+from m2_pylox.parser import Parser
+from m2_pylox.scanner import Scanner
 from m2_pylox.tokens import Token, TokenType as TT
 
-
 class Lox:
+    interpreter = Interpreter()
+
     def __init__(self) -> None:
         self.had_error = False
+        self.had_runtime_error = False
 
     def run_file(self, path: str | os.PathLike) -> None:
         with open(path, "r") as file:
@@ -23,8 +27,6 @@ class Lox:
             print("Bye.")
 
     def run(self, source: str) -> None:
-        from m2_pylox.scanner import Scanner
-        from m2_pylox.parser import Parser
 
         scanner = Scanner(source)
         tokens = scanner.scan_tokens()
@@ -35,7 +37,7 @@ class Lox:
         if self.had_error or expression is None:
             return
 
-        print(AstPrinter().print(expression))
+        self.interpreter.interpret(expression)
 
     def error(self, where: int | Token, message: str) -> None:
         if isinstance(where, int):
@@ -45,6 +47,10 @@ class Lox:
                 self.report(where.line, " at end", message)
             else:
                 self.report(where.line, f" at '{where.lexeme}'", message)
+    
+    def runtime_error(self, error: LoxRuntimeError) -> None:
+        print(f"{error}\n[line {error.token.line}]", file=sys.stderr)
+        self.had_runtime_error = True
 
     def report(self, line: int, where: str, message: str) -> None:
         print(f"[line {line}] Error{where}: {message}", file=sys.stderr)

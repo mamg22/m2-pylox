@@ -14,6 +14,8 @@ def main() -> None:
         lox.run_file(sys.argv[1])
         if lox.had_error:
             sys.exit(65)
+        if lox.had_runtime_error:
+            sys.exit(70)
     else:
         lox.run_prompt()
 
