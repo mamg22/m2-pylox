@@ -96,7 +96,7 @@ class Parser:
 
         while self.match(*token_list):
             operator = self.previous()
-            right = self.handle_left_binary(matcher, *token_list)
+            right = matcher()
             expr = ex.Binary(expr, operator, right)
         
         return expr
