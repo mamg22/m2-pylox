@@ -1,5 +1,6 @@
 import m2_pylox.expr as ex
 from m2_pylox import lox
+from m2_pylox import stmt as st
 from m2_pylox.tokens import Token, TokenType as TT, TokenGroup as TG
 
 
@@ -14,14 +15,82 @@ class Parser:
         self.tokens = tokens
         self.current = 0
 
-    def parse(self) -> ex.Expr | None:
+    def parse(self) -> list[st.Stmt]:
+        statements: list[st.Stmt] = []
+        while not self.at_end():
+            decl = self.declaration()
+            if decl is not None:
+                statements.append(decl)
+
+        return statements
+    
+    def declaration(self) -> st.Stmt | None:
         try:
-            return self.expression()
+            if self.match(TT.VAR):
+                return self.var_declaration()
+            
+            return self.statement()
         except ParseError:
+            self.synchronize()
             return None
     
+    def var_declaration(self) -> st.Stmt:
+        name = self.consume(TT.IDENTIFIER, "Expected variable name")
+
+        initializer = None
+        if self.match(TT.EQUAL):
+            initializer = self.expression()
+        
+        self.consume(TT.SEMICOLON, "Expected ';' after variable declaration")
+        return st.Var(name, initializer)
+    
+    def statement(self) -> st.Stmt:
+        if self.match(TT.PRINT):
+            return self.print_statement()
+        if self.match(TT.LEFT_BRACE):
+            return st.Block(self.block())
+
+        return self.expression_statement()
+    
+    def print_statement(self) -> st.Stmt:
+        value = self.expression()
+        self.consume(TT.SEMICOLON, "Expected ';' after value")
+        return st.Print(value)
+    
+    def expression_statement(self) -> st.Stmt:
+        expr = self.expression()
+        self.consume(TT.SEMICOLON, "Expected ';' after expression")
+        return st.Expression(expr)
+    
+    def block(self) -> list[st.Stmt]:
+        statements: list[st.Stmt] = []
+
+        while not self.check(TT.RIGHT_BRACE) and not self.at_end():
+            decl = self.declaration()
+            if decl is not None:
+                statements.append(decl)
+        
+        self.consume(TT.RIGHT_BRACE, "Expected '}' after block")
+        return statements
+
+    
     def expression(self) -> ex.Expr:
-        return self.comma()
+        return self.assignment()
+    
+    def assignment(self) -> ex.Expr:
+        expr = self.comma()
+
+        if self.match(TT.EQUAL):
+            equals = self.previous()
+            value = self.assignment()
+
+            if isinstance(expr, ex.Variable):
+                name = expr.name
+                return ex.Assign(name, value)
+            
+            self.error(equals, "Invalid assignment target")
+
+        return expr
 
     def comma(self) -> ex.Expr:
         return self.handle_left_binary(self.conditional, TT.COMMA)
@@ -69,6 +138,9 @@ class Parser:
         
         if self.match(TT.NUMBER, TT.STRING):
             return ex.Literal(self.previous().literal)
+        
+        if self.match(TT.IDENTIFIER):
+            return ex.Variable(self.previous())
 
         if self.match(TT.LEFT_PAREN):
             expr = self.expression()

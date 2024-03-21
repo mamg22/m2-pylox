@@ -1,8 +1,10 @@
 from functools import singledispatchmethod
 from typing import Any, override, Final
 
+from m2_pylox.environment import Environment
 import m2_pylox.expr as ex
 from m2_pylox import lox
+from m2_pylox import stmt as st
 from m2_pylox.tokens import Token, TokenType as TT, TokenGroup as TG
 from m2_pylox.visitor import Visitor, Visitable
 
@@ -16,10 +18,15 @@ class LoxRuntimeError(Exception):
 
 
 class Interpreter(Visitor[Any]):
-    def interpret(self, expression: ex.Expr) -> None:
+    environment: Environment
+
+    def __init__(self) -> None:
+        self.environment = Environment()
+
+    def interpret(self, statements: list[st.Stmt]) -> None:
         try:
-            value = self.evaluate(expression)
-            print(self.stringify(value))
+            for statement in statements:
+                self.execute(statement)
         except LoxRuntimeError as error:
             lox.get_lox().runtime_error(error)
 
@@ -113,11 +120,56 @@ class Interpreter(Visitor[Any]):
         else:
             return self.evaluate(expr.on_false)
     
+    @visit.register
+    def _(self, expr: ex.Variable) -> Any:
+        return self.environment.get(expr.name)
+    
+    @visit.register
+    def _(self, expr: ex.Assign) -> Any:
+        value = self.evaluate(expr.value)
+        self.environment.assign(expr.name, value)
+        return value
+
+    @visit.register
+    def _(self, stmt: st.Expression) -> None:
+        self.evaluate(stmt.expression)
+    
+    @visit.register
+    def _(self, stmt: st.Print) -> None:
+        value = self.evaluate(stmt.expression)
+        print(self.stringify(value))
+    
+    @visit.register
+    def _(self, stmt: st.Var) -> None:
+        value = None
+        if stmt.initializer:
+            value = self.evaluate(stmt.initializer)
+        
+        self.environment.define(stmt.name.lexeme, value)
+
+    @visit.register
+    def _(self, stmt: st.Block) -> None:
+        self.execute_block(stmt.statements, Environment(self.environment))
+    
     def is_truthy(self, obj: Any) -> bool:
         return obj not in {None, False}
     
     def evaluate(self, expr: ex.Expr) -> Any:
         return expr.accept(self)
+    
+    def execute(self, stmt: st.Stmt) -> None:
+        stmt.accept(self)
+    
+    def execute_block(self, statements: list[st.Stmt], environment: Environment) -> None:
+        previous = self.environment
+
+        try:
+            self.environment = environment
+
+            for statement in statements:
+                self.execute(statement)
+        finally:
+            self.environment = previous
     
     @staticmethod
     def is_number(num: Any) -> bool:

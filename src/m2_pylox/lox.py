@@ -27,17 +27,16 @@ class Lox:
             print("Bye.")
 
     def run(self, source: str) -> None:
-
         scanner = Scanner(source)
         tokens = scanner.scan_tokens()
 
         parser = Parser(tokens)
-        expression = parser.parse()
+        statements = parser.parse()
 
-        if self.had_error or expression is None:
+        if self.had_error or not statements:
             return
 
-        self.interpreter.interpret(expression)
+        self.interpreter.interpret(statements)
 
     def error(self, where: int | Token, message: str) -> None:
         if isinstance(where, int):
