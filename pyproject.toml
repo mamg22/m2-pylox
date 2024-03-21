@@ -1,13 +1,13 @@
 [project]
 name = "m2-pylox"
 version = "0.1.0"
-description = "Add your description here"
+description = "Python port of the tree-walking Lox interpreter from the Crafting Interpreters book"
 authors = [
     { name = "mamg22", email = "45301823+mamg22@users.noreply.github.com" }
 ]
 dependencies = []
 readme = "README.md"
-requires-python = ">= 3.8"
+requires-python = ">= 3.12"
 
 [build-system]
 requires = ["hatchling"]
