@@ -20,7 +20,8 @@ This project currently uses [`rye`](https://rye-up.com/) for dependency and proj
     - Non-number comparisons. Only allowed between expressions of the same type, allowing numbers, strings and booleans.
     - Convert addition operands to strings if only one of them is already a string.
     - Handle division by zero with a runtime error.
-
+* Chapter 8
+    - Throw runtime error on uninitialized variable access.
 
 # Implementation differences
 

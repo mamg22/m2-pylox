@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Any
 
 from m2_pylox import expr as ex
 from m2_pylox.tokens import Token

@@ -16,9 +16,9 @@ class LoxRuntimeError(Exception):
         super().__init__(message)
         self.token = token
 
-
 class Interpreter(Visitor[Any]):
     environment: Environment
+    _uninitialized = object()
 
     def __init__(self) -> None:
         self.environment = Environment()
@@ -122,7 +122,11 @@ class Interpreter(Visitor[Any]):
     
     @visit.register
     def _(self, expr: ex.Variable) -> Any:
-        return self.environment.get(expr.name)
+        var = self.environment.get(expr.name)
+        if var is self._uninitialized:
+            raise LoxRuntimeError(expr.name, f"Access of uninitialized variable '{expr.name.lexeme}'")
+
+        return var
     
     @visit.register
     def _(self, expr: ex.Assign) -> Any:
@@ -141,7 +145,7 @@ class Interpreter(Visitor[Any]):
     
     @visit.register
     def _(self, stmt: st.Var) -> None:
-        value = None
+        value = self._uninitialized
         if stmt.initializer:
             value = self.evaluate(stmt.initializer)
         
