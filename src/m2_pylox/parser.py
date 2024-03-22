@@ -89,10 +89,13 @@ class Parser:
 
     
     def expression(self) -> ex.Expr:
-        return self.assignment()
+        return self.comma()
+
+    def comma(self) -> ex.Expr:
+        return self.handle_left_binary(self.assignment, TT.COMMA)
     
     def assignment(self) -> ex.Expr:
-        expr = self.comma()
+        expr = self.conditional()
 
         if self.match(TT.EQUAL):
             equals = self.previous()
@@ -105,9 +108,6 @@ class Parser:
             self.error(equals, "Invalid assignment target")
 
         return expr
-
-    def comma(self) -> ex.Expr:
-        return self.handle_left_binary(self.conditional, TT.COMMA)
 
     def conditional(self) -> ex.Expr:
         condition = self.equality()
