@@ -45,12 +45,26 @@ class Parser:
         return st.Var(name, initializer)
     
     def statement(self) -> st.Stmt:
+        if self.match(TT.IF):
+            return self.if_statement()
         if self.match(TT.PRINT):
             return self.print_statement()
         if self.match(TT.LEFT_BRACE):
             return st.Block(self.block())
 
         return self.expression_statement()
+    
+    def if_statement(self) -> st.Stmt:
+        self.consume(TT.LEFT_PAREN, "Expected '(' after 'if'")
+        condition = self.expression()
+        self.consume(TT.RIGHT_PAREN, "Expected ')' after if condition")
+
+        then_branch = self.statement()
+        else_branch = None
+        if self.match(TT.ELSE):
+            else_branch = self.statement()
+        
+        return st.If(condition, then_branch, else_branch)
     
     def print_statement(self) -> st.Stmt:
         value = self.expression()

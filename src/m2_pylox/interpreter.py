@@ -139,6 +139,13 @@ class Interpreter(Visitor[Any]):
         self.evaluate(stmt.expression)
     
     @visit.register
+    def _(self, stmt: st.If) -> None:
+        if self.is_truthy(self.evaluate(stmt.condition)):
+            self.execute(stmt.then_branch)
+        elif stmt.else_branch is not None:
+            self.execute(stmt.else_branch)
+    
+    @visit.register
     def _(self, stmt: st.Print) -> None:
         value = self.evaluate(stmt.expression)
         print(self.stringify(value))

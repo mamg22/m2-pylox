@@ -24,3 +24,9 @@ class Var(Stmt):
 @dataclass(frozen=True)
 class Block(Stmt):
     statements: list[Stmt]
+
+@dataclass(frozen=True)
+class If(Stmt):
+    condition: ex.Expr
+    then_branch: Stmt
+    else_branch: Stmt | None = None
