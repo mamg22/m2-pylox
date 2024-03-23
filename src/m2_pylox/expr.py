@@ -42,3 +42,9 @@ class Variable(Expr):
 class Assign(Expr):
     name: Token
     value: Expr
+
+@dataclass(frozen=True)
+class Logical(Expr):
+    left: Expr
+    operator: Token
+    right: Expr

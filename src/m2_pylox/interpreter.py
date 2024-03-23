@@ -135,6 +135,19 @@ class Interpreter(Visitor[Any]):
         return value
 
     @visit.register
+    def _(self, expr: ex.Logical) -> Any:
+        left = self.evaluate(expr.left)
+
+        if expr.operator.type == TT.OR:
+            if self.is_truthy(left):
+                return left
+        else:
+            if not self.is_truthy(left):
+                return left
+        
+        return self.evaluate(expr.right)
+
+    @visit.register
     def _(self, stmt: st.Expression) -> None:
         self.evaluate(stmt.expression)
     

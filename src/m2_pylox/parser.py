@@ -1,3 +1,5 @@
+from typing import Callable
+
 import m2_pylox.expr as ex
 from m2_pylox import lox
 from m2_pylox import stmt as st
@@ -110,7 +112,7 @@ class Parser:
         return expr
 
     def conditional(self) -> ex.Expr:
-        condition = self.equality()
+        condition = self.logical_or()
 
         if self.match(TT.QUESTION):
             on_true = self.expression()
@@ -120,6 +122,11 @@ class Parser:
         
         return condition
 
+    def logical_or(self) -> ex.Expr:
+        return self.handle_left_binary(self.logical_and, TT.OR, expr_type=ex.Logical)
+    
+    def logical_and(self) -> ex.Expr:
+        return self.handle_left_binary(self.equality, TT.AND, expr_type=ex.Logical)
 
     def equality(self) -> ex.Expr:
         return self.handle_left_binary(self.comparison, *TG.Equality)
@@ -177,13 +184,18 @@ class Parser:
 
         raise self.error(self.peek(), "Expected expression.")
 
-    def handle_left_binary(self, matcher, *token_list) -> ex.Expr:
+    def handle_left_binary(
+            self,
+            matcher: Callable[[], ex.Expr],
+            *token_list: TT, 
+            expr_type: type = ex.Binary
+            ) -> ex.Expr:
         expr = matcher()
 
         while self.match(*token_list):
             operator = self.previous()
             right = matcher()
-            expr = ex.Binary(expr, operator, right)
+            expr = expr_type(expr, operator, right)
         
         return expr
 
