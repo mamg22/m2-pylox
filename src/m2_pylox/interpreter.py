@@ -170,6 +170,11 @@ class Interpreter(Visitor[Any]):
             value = self.evaluate(stmt.initializer)
         
         self.environment.define(stmt.name.lexeme, value)
+    
+    @visit.register
+    def _(self, stmt: st.While) -> None:
+        while self.is_truthy(self.evaluate(stmt.condition)):
+            self.execute(stmt.body)
 
     @visit.register
     def _(self, stmt: st.Block) -> None:

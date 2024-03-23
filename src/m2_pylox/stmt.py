@@ -30,3 +30,8 @@ class If(Stmt):
     condition: ex.Expr
     then_branch: Stmt
     else_branch: Stmt | None = None
+
+@dataclass(frozen=True)
+class While(Stmt):
+    condition: ex.Expr
+    body: Stmt
