@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from typing import Callable
 
 import m2_pylox.expr as ex
@@ -10,12 +11,42 @@ class ParseError(Exception):
     pass
 
 
+class ParserContext:
+    loop_depth: int
+
+    def __init__(self):
+        self.loop_depth = 0
+
+
 class Parser:
     def __init__(self, tokens: list[Token] | None = None) -> None:
         if tokens is None:
             tokens = []
         self.tokens = tokens
         self.current = 0
+
+        self.context_stack = [ParserContext()]
+    
+    def current_context(self) -> ParserContext:
+        return self.context_stack[-1]
+    
+    def push_context(self) -> None:
+        self.context_stack.append(ParserContext())
+    
+    def pop_context(self) -> ParserContext:
+        if len(self.context_stack) == 1:
+            raise Exception("Cannot pop root context from parser")
+        
+        return self.context_stack.pop()
+    
+    @contextmanager
+    def loop_context(self):
+        context = self.current_context()
+        try:
+            context.loop_depth += 1
+            yield
+        finally:
+            context.loop_depth -= 1
 
     def parse(self) -> list[st.Stmt]:
         statements: list[st.Stmt] = []
@@ -47,14 +78,17 @@ class Parser:
         return st.Var(name, initializer)
     
     def while_statement(self) -> st.Stmt:
-        self.consume(TT.LEFT_PAREN, "Expected '(' after 'while'")
-        condition = self.expression()
-        self.consume(TT.RIGHT_PAREN, "Expected ')' after condition")
-        body = self.statement()
+        with self.loop_context():
+            self.consume(TT.LEFT_PAREN, "Expected '(' after 'while'")
+            condition = self.expression()
+            self.consume(TT.RIGHT_PAREN, "Expected ')' after condition")
+            body = self.statement()
 
-        return st.While(condition, body)
+            return st.While(condition, body)
     
     def statement(self) -> st.Stmt:
+        if self.match(TT.BREAK):
+            return self.break_statement()
         if self.match(TT.FOR):
             return self.for_statement()
         if self.match(TT.IF):
@@ -67,43 +101,52 @@ class Parser:
             return st.Block(self.block())
 
         return self.expression_statement()
+
+    def break_statement(self) -> st.Stmt:
+        previous = self.previous()
+        if self.current_context().loop_depth > 0:
+            self.consume(TT.SEMICOLON, f"Expected ';' after '{previous.lexeme}'")
+            return st.Break()
+        else:
+            raise self.error(self.previous(), "Control flow statement used outside loop")
     
     def for_statement(self) -> st.Stmt:
-        self.consume(TT.LEFT_PAREN, "Expected '(' after 'for'")
+        with self.loop_context():
+            self.consume(TT.LEFT_PAREN, "Expected '(' after 'for'")
 
-        if self.match(TT.SEMICOLON):
-            initializer = None
-        elif self.match(TT.VAR):
-            initializer = self.var_declaration()
-        else:
-            initializer = self.expression_statement()
-        
-        condition = None
-        if not self.check(TT.SEMICOLON):
-            condition = self.expression()
+            if self.match(TT.SEMICOLON):
+                initializer = None
+            elif self.match(TT.VAR):
+                initializer = self.var_declaration()
+            else:
+                initializer = self.expression_statement()
+            
+            condition = None
+            if not self.check(TT.SEMICOLON):
+                condition = self.expression()
 
-        self.consume(TT.SEMICOLON, "Expected ';' after loop condition")
+            self.consume(TT.SEMICOLON, "Expected ';' after loop condition")
 
-        increment = None
-        if not self.check(TT.RIGHT_PAREN):
-            increment = self.expression()
+            increment = None
+            if not self.check(TT.RIGHT_PAREN):
+                increment = self.expression()
 
-        self.consume(TT.RIGHT_PAREN, "Expected ')' after for clauses")
+            self.consume(TT.RIGHT_PAREN, "Expected ')' after for clauses")
 
-        body = self.statement()
+            body = self.statement()
 
-        if increment is not None:
-            body = st.Block([body, st.Expression(increment)])
-        
-        if condition is None:
-            condition = ex.Literal(True)
+            if increment is not None:
+                body = st.Block([body, st.Expression(increment)])
+            
+            if condition is None:
+                condition = ex.Literal(True)
 
-        body = st.While(condition, body)
+            body = st.While(condition, body)
 
-        if initializer is not None:
-            body = st.Block([initializer, body])
+            if initializer is not None:
+                body = st.Block([initializer, body])
 
-        return body
+            return body
     
     def if_statement(self) -> st.Stmt:
         self.consume(TT.LEFT_PAREN, "Expected '(' after 'if'")

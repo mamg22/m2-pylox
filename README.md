@@ -22,6 +22,9 @@ This project currently uses [`rye`](https://rye-up.com/) for dependency and proj
     - Handle division by zero with a runtime error.
 * Chapter 8
     - Throw runtime error on uninitialized variable access.
+* Chapter 9
+    - `break` statement.
+    - Tried to add `continue` too, but the way to handle it conflicts with desugared `for` loops, since the increment becomes part of the loop body, which is skipped by `continue`, causing an infinite loop; maybe I'll add it later with a different approach.
 
 # Implementation differences
 

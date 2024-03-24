@@ -31,6 +31,7 @@ class TokenType(Enum):
     NUMBER = auto()
 
     AND = "and"
+    BREAK = "break"
     CLASS = "class"
     ELSE = "else"
     FALSE = "false"

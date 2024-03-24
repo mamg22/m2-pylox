@@ -35,3 +35,7 @@ class If(Stmt):
 class While(Stmt):
     condition: ex.Expr
     body: Stmt
+
+@dataclass(frozen=True)
+class Break(Stmt):
+    pass

@@ -16,6 +16,9 @@ class LoxRuntimeError(Exception):
         super().__init__(message)
         self.token = token
 
+class LoxBreak(Exception):
+    pass
+
 class Interpreter(Visitor[Any]):
     environment: Environment
     _uninitialized = object()
@@ -146,6 +149,10 @@ class Interpreter(Visitor[Any]):
                 return left
         
         return self.evaluate(expr.right)
+    
+    @visit.register
+    def _(self, stmt: st.Break) -> None:
+        raise LoxBreak()
 
     @visit.register
     def _(self, stmt: st.Expression) -> None:
@@ -174,7 +181,10 @@ class Interpreter(Visitor[Any]):
     @visit.register
     def _(self, stmt: st.While) -> None:
         while self.is_truthy(self.evaluate(stmt.condition)):
-            self.execute(stmt.body)
+            try:
+                self.execute(stmt.body)
+            except LoxBreak:
+                break
 
     @visit.register
     def _(self, stmt: st.Block) -> None:
