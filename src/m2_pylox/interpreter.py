@@ -4,15 +4,16 @@ from typing import Any, override, Final
 from m2_pylox.environment import Environment
 import m2_pylox.expr as ex
 from m2_pylox import lox
+from m2_pylox import function as fn
 from m2_pylox import stmt as st
 from m2_pylox.tokens import Token, TokenType as TT, TokenGroup as TG
 from m2_pylox.visitor import Visitor, Visitable
 
 
 class LoxRuntimeError(Exception):
-    token: Final[Token]
+    token: Final[Token | None]
 
-    def __init__(self, token: Token, message: str) -> None:
+    def __init__(self, token: Token | None, message: str) -> None:
         super().__init__(message)
         self.token = token
 
@@ -20,11 +21,23 @@ class LoxBreak(Exception):
     pass
 
 class Interpreter(Visitor[Any]):
+    globals: Environment
     environment: Environment
     _uninitialized = object()
 
     def __init__(self) -> None:
-        self.environment = Environment()
+        self.globals = Environment()
+        self.environment = self.globals
+
+        self.register_native(fn.clock)
+        self.register_native(fn.randint)
+        self.register_native(fn.lox_input)
+    
+    def register_native(self, function: fn.NativeFunction, name: str | None = None):
+        if name is None:
+            name = function.name
+        
+        self.globals.define(name, function)
 
     def interpret(self, statements: list[st.Stmt]) -> None:
         try:
@@ -149,6 +162,25 @@ class Interpreter(Visitor[Any]):
                 return left
         
         return self.evaluate(expr.right)
+    
+    @visit.register
+    def _(self, expr: ex.Call) -> Any:
+        callee = self.evaluate(expr.callee)
+
+        arguments = []
+        for argument in expr.arguments:
+            arguments.append(self.evaluate(argument))
+        
+        if not isinstance(callee, fn.LoxCallable):
+            raise LoxRuntimeError(expr.paren, "Can only call functions and classes")
+
+        function = callee
+
+        if len(arguments) != function.arity():
+            raise LoxRuntimeError(expr.paren,
+            f"Expected {function.arity()} arguments but got {len(arguments)}")
+
+        return function.call(self, arguments)
     
     @visit.register
     def _(self, stmt: st.Break) -> None:

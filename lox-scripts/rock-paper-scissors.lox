@@ -1,0 +1,31 @@
+/*
+This is a simple game using Lox with some extensions
+specified in some of the book's challenges and some
+custom functionality via native functions.
+*/
+print "Let's play rock, paper, scissors";
+print "Choose 1 = Rock, 2 = Paper, 3 = Scissors";
+print "";
+
+var choice = input("Choice: ");
+// Choose and cast to string
+var opponent = randint(1, 3) + "";
+
+if (choice != "1" and choice != "2" and choice != "3") {
+    print "That is not a valid choice";
+}
+else {
+    print "I chose " + opponent;
+
+    if (choice == opponent) {
+        print "It's a tie!";
+    }
+    else if (choice == "1" and opponent == "3" or
+             choice == "2" and opponent == "1" or
+             choice == "3" and opponent == "2") {
+        print "You win!";
+    }
+    else {
+        print "You lose.";
+    }
+}

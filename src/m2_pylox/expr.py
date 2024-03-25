@@ -48,3 +48,9 @@ class Logical(Expr):
     left: Expr
     operator: Token
     right: Expr
+
+@dataclass(frozen=True)
+class Call(Expr):
+    callee: Expr
+    paren: Token
+    arguments: list[Expr]
