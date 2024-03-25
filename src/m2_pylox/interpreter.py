@@ -1,5 +1,5 @@
 from functools import singledispatchmethod
-from typing import Any, override, Final
+from typing import Any, Never, override, Final
 
 from m2_pylox.environment import Environment
 import m2_pylox.expr as ex
@@ -48,8 +48,8 @@ class Interpreter(Visitor[Any]):
 
     @singledispatchmethod
     @override
-    def visit(self, _: Visitable) -> Any:
-        raise NotImplementedError()
+    def visit(self, obj: Visitable) -> Any:
+        raise NotImplementedError(f"'{obj.__class__.__name__}' could not be dispatched by visit()")
 
     @visit.register
     def _(self, expr: ex.Literal) -> Any:
@@ -183,12 +183,17 @@ class Interpreter(Visitor[Any]):
         return function.call(self, arguments)
     
     @visit.register
-    def _(self, stmt: st.Break) -> None:
+    def _(self, _: st.Break) -> Never:
         raise LoxBreak()
 
     @visit.register
     def _(self, stmt: st.Expression) -> None:
         self.evaluate(stmt.expression)
+    
+    @visit.register
+    def _(self, stmt: st.Function) -> None:
+        function = fn.LoxFunction(stmt)
+        self.environment.define(stmt.name.lexeme, function)
     
     @visit.register
     def _(self, stmt: st.If) -> None:
@@ -201,6 +206,14 @@ class Interpreter(Visitor[Any]):
     def _(self, stmt: st.Print) -> None:
         value = self.evaluate(stmt.expression)
         print(self.stringify(value))
+    
+    @visit.register
+    def _(self, stmt: st.Return) -> Never:
+        value = None
+        if stmt.value is not None:
+            value = self.evaluate(stmt.value)
+
+        raise fn.Return(value)
     
     @visit.register
     def _(self, stmt: st.Var) -> None:

@@ -39,3 +39,14 @@ class While(Stmt):
 @dataclass(frozen=True)
 class Break(Stmt):
     pass
+
+@dataclass(frozen=True)
+class Function(Stmt):
+    name: Token
+    params: list[Token]
+    body: list[Stmt]
+
+@dataclass(frozen=True)
+class Return(Stmt):
+    keyword: Token
+    value: ex.Expr | None

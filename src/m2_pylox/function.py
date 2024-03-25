@@ -2,6 +2,8 @@ import random
 import time
 from typing import Callable, Protocol, runtime_checkable, Any, Never
 
+from m2_pylox.environment import Environment
+import m2_pylox.stmt as st
 from m2_pylox import interpreter as interp
 
 @runtime_checkable
@@ -11,6 +13,40 @@ class LoxCallable(Protocol):
     
     def arity(self) -> int:
         ...
+    
+
+
+class Return(Exception):
+    value: Any
+
+    def __init__(self, value: Any):
+        self.value = value
+
+class LoxFunction:
+    declaration: st.Function
+
+    def __init__(self, declaration: st.Function) -> None:
+        self.declaration = declaration
+    
+    def call(self, interpreter: 'interp.Interpreter', arguments: list) -> Any:
+        environment = Environment(interpreter.globals)
+
+        for param, arg in zip(self.declaration.params, arguments):
+            environment.define(param.lexeme, arg)
+        
+        try:
+            interpreter.execute_block(self.declaration.body, environment)
+        except Return as ret:
+            return ret.value
+
+        return None
+    
+    def arity(self) -> int:
+        return len(self.declaration.params)
+
+    def __str__(self) -> str:
+        return f"<fn {self.declaration.name.lexeme}>"
+    
 
 class NativeFunction:
     def __init__(self, name: str, arity: int, function: Callable) -> None:

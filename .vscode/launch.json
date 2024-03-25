@@ -4,11 +4,26 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "Python Debugger: Module",
             "type": "debugpy",
             "request": "launch",
             "module": "m2_pylox"
+        },
+        {
+            "name": "Python Debugger: Module + name",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "m2_pylox",
+            "args": ["lox-scripts/${input:script_name}.lox"]
+        }
+    ],
+    "inputs": [
+        {
+            "id": "script_name",
+            "type": "promptString",
+            "description": "Script name"
         }
     ]
 }

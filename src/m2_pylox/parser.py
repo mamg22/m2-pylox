@@ -47,6 +47,14 @@ class Parser:
             yield
         finally:
             context.loop_depth -= 1
+    
+    @contextmanager
+    def start_context(self):
+        try:
+            self.push_context()
+            yield
+        finally:
+            self.pop_context()
 
     def parse(self) -> list[st.Stmt]:
         statements: list[st.Stmt] = []
@@ -59,6 +67,8 @@ class Parser:
     
     def declaration(self) -> st.Stmt | None:
         try:
+            if self.match(TT.FUN):
+                return self.function("function")
             if self.match(TT.VAR):
                 return self.var_declaration()
             
@@ -95,6 +105,8 @@ class Parser:
             return self.if_statement()
         if self.match(TT.PRINT):
             return self.print_statement()
+        if self.match(TT.RETURN):
+            return self.return_statement()
         if self.match(TT.WHILE):
             return self.while_statement()
         if self.match(TT.LEFT_BRACE):
@@ -165,10 +177,41 @@ class Parser:
         self.consume(TT.SEMICOLON, "Expected ';' after value")
         return st.Print(value)
     
+    def return_statement(self) -> st.Stmt:
+        keyword = self.previous()
+        value: ex.Expr | None = None
+        if not self.check(TT.SEMICOLON):
+            value = self.expression()
+
+        self.consume(TT.SEMICOLON, "Expect ';' after return value")
+        return st.Return(keyword, value)
+
+    
     def expression_statement(self) -> st.Stmt:
         expr = self.expression()
         self.consume(TT.SEMICOLON, "Expected ';' after expression")
         return st.Expression(expr)
+    
+    def function(self, kind: str) -> st.Function:
+        name = self.consume(TT.IDENTIFIER, f"Expected {kind} name")
+        self.consume(TT.LEFT_PAREN, f"Expected '(' after {kind} name")
+        parameters: list[Token] = []
+
+        if not self.check(TT.RIGHT_PAREN):
+            while True:
+                if len(parameters) >= 255:
+                    self.error(self.peek(), "Can't have more than 255 parameters")
+                
+                parameters.append(self.consume(TT.IDENTIFIER, "Expected parameter name"))
+
+                if not self.match(TT.COMMA):
+                    break
+        
+        self.consume(TT.RIGHT_PAREN, "Expected ')' after parameters")
+
+        self.consume(TT.LEFT_BRACE, f"Expected '{{' before {kind} body")
+        body = self.block()
+        return st.Function(name, parameters, body)
     
     def block(self) -> list[st.Stmt]:
         statements: list[st.Stmt] = []
