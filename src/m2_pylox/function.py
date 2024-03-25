@@ -24,12 +24,14 @@ class Return(Exception):
 
 class LoxFunction:
     declaration: st.Function
+    closure: Environment
 
-    def __init__(self, declaration: st.Function) -> None:
+    def __init__(self, declaration: st.Function, closure: Environment) -> None:
         self.declaration = declaration
+        self.closure = closure
     
     def call(self, interpreter: 'interp.Interpreter', arguments: list) -> Any:
-        environment = Environment(interpreter.globals)
+        environment = Environment(self.closure)
 
         for param, arg in zip(self.declaration.params, arguments):
             environment.define(param.lexeme, arg)

@@ -192,7 +192,7 @@ class Interpreter(Visitor[Any]):
     
     @visit.register
     def _(self, stmt: st.Function) -> None:
-        function = fn.LoxFunction(stmt)
+        function = fn.LoxFunction(stmt, self.environment)
         self.environment.define(stmt.name.lexeme, function)
     
     @visit.register
