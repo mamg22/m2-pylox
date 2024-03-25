@@ -193,25 +193,26 @@ class Parser:
         return st.Expression(expr)
     
     def function(self, kind: str) -> st.Function:
-        name = self.consume(TT.IDENTIFIER, f"Expected {kind} name")
-        self.consume(TT.LEFT_PAREN, f"Expected '(' after {kind} name")
-        parameters: list[Token] = []
+        with self.start_context():
+            name = self.consume(TT.IDENTIFIER, f"Expected {kind} name")
+            self.consume(TT.LEFT_PAREN, f"Expected '(' after {kind} name")
+            parameters: list[Token] = []
 
-        if not self.check(TT.RIGHT_PAREN):
-            while True:
-                if len(parameters) >= 255:
-                    self.error(self.peek(), "Can't have more than 255 parameters")
-                
-                parameters.append(self.consume(TT.IDENTIFIER, "Expected parameter name"))
+            if not self.check(TT.RIGHT_PAREN):
+                while True:
+                    if len(parameters) >= 255:
+                        self.error(self.peek(), "Can't have more than 255 parameters")
+                    
+                    parameters.append(self.consume(TT.IDENTIFIER, "Expected parameter name"))
 
-                if not self.match(TT.COMMA):
-                    break
-        
-        self.consume(TT.RIGHT_PAREN, "Expected ')' after parameters")
+                    if not self.match(TT.COMMA):
+                        break
+            
+            self.consume(TT.RIGHT_PAREN, "Expected ')' after parameters")
 
-        self.consume(TT.LEFT_BRACE, f"Expected '{{' before {kind} body")
-        body = self.block()
-        return st.Function(name, parameters, body)
+            self.consume(TT.LEFT_BRACE, f"Expected '{{' before {kind} body")
+            body = self.block()
+            return st.Function(name, parameters, body)
     
     def block(self) -> list[st.Stmt]:
         statements: list[st.Stmt] = []
