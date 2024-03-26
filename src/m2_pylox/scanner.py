@@ -9,7 +9,7 @@ def is_ascii_digit(char: str) -> bool:
 
 
 def is_identifier(char: str) -> bool:
-    return char.isascii() and char.isidentifier()
+    return char.isascii() and char.isalnum() or char == '_'
 
 
 class Scanner:
