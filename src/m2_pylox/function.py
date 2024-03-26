@@ -3,6 +3,7 @@ import time
 from typing import Callable, Protocol, runtime_checkable, Any, Never
 
 from m2_pylox.environment import Environment
+import m2_pylox.expr as ex
 import m2_pylox.stmt as st
 from m2_pylox import interpreter as interp
 
@@ -23,10 +24,12 @@ class Return(Exception):
         self.value = value
 
 class LoxFunction:
-    declaration: st.Function
+    name: str | None
+    declaration: ex.Function
     closure: Environment
 
-    def __init__(self, declaration: st.Function, closure: Environment) -> None:
+    def __init__(self, name: str | None, declaration: ex.Function, closure: Environment) -> None:
+        self.name = name
         self.declaration = declaration
         self.closure = closure
     
@@ -47,7 +50,10 @@ class LoxFunction:
         return len(self.declaration.params)
 
     def __str__(self) -> str:
-        return f"<fn {self.declaration.name.lexeme}>"
+        if self.name is not None:
+            return f"<fn {self.name}>"
+        else:
+            return "<fn>"
     
 
 class NativeFunction:

@@ -1,8 +1,11 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from m2_pylox.tokens import Token
 from m2_pylox.visitor import Visitable
+
+if TYPE_CHECKING:
+    from m2_pylox import stmt as st
 
 
 @dataclass(frozen=True)
@@ -54,3 +57,8 @@ class Call(Expr):
     callee: Expr
     paren: Token
     arguments: list[Expr]
+
+@dataclass(frozen=True)
+class Function(Expr):
+    params: list[Token]
+    body: list['st.Stmt']

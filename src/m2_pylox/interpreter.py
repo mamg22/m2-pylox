@@ -183,6 +183,10 @@ class Interpreter(Visitor[Any]):
         return function.call(self, arguments)
     
     @visit.register
+    def _(self, expr: ex.Function) -> Any:
+        return fn.LoxFunction(None, expr, self.environment)
+    
+    @visit.register
     def _(self, _: st.Break) -> Never:
         raise LoxBreak()
 
@@ -192,7 +196,7 @@ class Interpreter(Visitor[Any]):
     
     @visit.register
     def _(self, stmt: st.Function) -> None:
-        function = fn.LoxFunction(stmt, self.environment)
+        function = fn.LoxFunction(stmt.name.lexeme, stmt.function, self.environment)
         self.environment.define(stmt.name.lexeme, function)
     
     @visit.register

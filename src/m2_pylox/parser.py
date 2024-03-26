@@ -67,7 +67,7 @@ class Parser:
     
     def declaration(self) -> st.Stmt | None:
         try:
-            if self.match(TT.FUN):
+            if self.check_next(TT.IDENTIFIER) and self.match(TT.FUN):
                 return self.function("function")
             if self.match(TT.VAR):
                 return self.var_declaration()
@@ -191,11 +191,14 @@ class Parser:
         expr = self.expression()
         self.consume(TT.SEMICOLON, "Expected ';' after expression")
         return st.Expression(expr)
-    
+
     def function(self, kind: str) -> st.Function:
+        name = self.consume(TT.IDENTIFIER, f"Expected {kind} name")
+        return st.Function(name, self.function_body(kind))
+
+    def function_body(self, kind: str) -> ex.Function:
         with self.start_context():
-            name = self.consume(TT.IDENTIFIER, f"Expected {kind} name")
-            self.consume(TT.LEFT_PAREN, f"Expected '(' after {kind} name")
+            self.consume(TT.LEFT_PAREN, f"Expected '(' after beginning of {kind} definition")
             parameters: list[Token] = []
 
             if not self.check(TT.RIGHT_PAREN):
@@ -212,7 +215,7 @@ class Parser:
 
             self.consume(TT.LEFT_BRACE, f"Expected '{{' before {kind} body")
             body = self.block()
-            return st.Function(name, parameters, body)
+            return ex.Function(parameters, body)
     
     def block(self) -> list[st.Stmt]:
         statements: list[st.Stmt] = []
@@ -325,6 +328,9 @@ class Parser:
         if self.match(TT.IDENTIFIER):
             return ex.Variable(self.previous())
 
+        if self.match(TT.FUN):
+            return self.function_body("function")
+
         if self.match(TT.LEFT_PAREN):
             expr = self.expression()
             self.consume(TT.RIGHT_PAREN, "Expected ')' after expression.")
@@ -381,6 +387,14 @@ class Parser:
             return False
         
         return self.peek().type == type
+    
+    def check_next(self, type: TT) -> bool:
+        next_tok = self.peek_next()
+        if next_tok is None:
+            return False
+
+        return next_tok.type == type
+        
 
     def advance(self) -> Token:
         if not self.at_end():
@@ -393,6 +407,12 @@ class Parser:
 
     def peek(self) -> Token:
         return self.tokens[self.current]
+    
+    def peek_next(self) -> Token | None:
+        try:
+            return self.tokens[self.current + 1]
+        except IndexError:
+            return None
 
     def previous(self) -> Token:
         return self.tokens[self.current - 1]

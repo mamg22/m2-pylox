@@ -43,8 +43,7 @@ class Break(Stmt):
 @dataclass(frozen=True)
 class Function(Stmt):
     name: Token
-    params: list[Token]
-    body: list[Stmt]
+    function: ex.Function
 
 @dataclass(frozen=True)
 class Return(Stmt):
