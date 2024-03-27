@@ -70,15 +70,15 @@ class Resolver(Visitor):
             if name.lexeme in scope:
                 self.interpreter.resolve(expr, i)
     
-    def resolve_function(self, function: st.Function, type: FunctionType) -> None:
+    def resolve_function(self, function: ex.Function, type: FunctionType) -> None:
         enclosing_function = self.current_function
         self.current_function = type
 
         with self.scope():
-            for param in function.function.params:
+            for param in function.params:
                 self.declare(param)
                 self.define(param)
-            self.resolve(function.function.body)
+            self.resolve(function.body)
         
         self.current_function = enclosing_function
     
@@ -91,6 +91,10 @@ class Resolver(Visitor):
     def _(self, stmt: st.Block) -> None:
         with self.scope():
             self.resolve(stmt.statements)
+    
+    @visit.register
+    def _(self, stmt: st.Break) -> None:
+        pass
 
     @visit.register
     def _(self, stmt: st.Expression) -> None:
@@ -101,7 +105,7 @@ class Resolver(Visitor):
         self.declare(stmt.name)
         self.define(stmt.name)
 
-        self.resolve_function(stmt, FunctionType.FUNCTION)
+        self.resolve_function(stmt.function, FunctionType.FUNCTION)
     
     @visit.register
     def _(self, stmt: st.If) -> None:
@@ -151,6 +155,16 @@ class Resolver(Visitor):
 
         for argument in expr.arguments:
             self.resolve(argument)
+    
+    @visit.register
+    def _(self, expr: ex.Conditional) -> None:
+        self.resolve(expr.condition)
+        self.resolve(expr.on_true)
+        self.resolve(expr.on_false)
+    
+    @visit.register
+    def _(self, expr: ex.Function) -> None:
+        self.resolve_function(expr, FunctionType.FUNCTION)
         
     @visit.register
     def _(self, expr: ex.Grouping) -> None:
