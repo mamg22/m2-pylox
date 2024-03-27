@@ -23,11 +23,13 @@ class LoxBreak(Exception):
 class Interpreter(Visitor[Any]):
     globals: Environment
     environment: Environment
+    locals: dict[ex.Expr, int]
     _uninitialized = object()
 
     def __init__(self) -> None:
         self.globals = Environment()
         self.environment = self.globals
+        self.locals = {}
 
         self.register_native(fn.clock)
         self.register_native(fn.randint)
@@ -138,6 +140,7 @@ class Interpreter(Visitor[Any]):
     
     @visit.register
     def _(self, expr: ex.Variable) -> Any:
+        var = self.lookup_variable(expr.name, expr)
         var = self.environment.get(expr.name)
         if var is self._uninitialized:
             raise LoxRuntimeError(expr.name, f"Access of uninitialized variable '{expr.name.lexeme}'")
@@ -147,7 +150,12 @@ class Interpreter(Visitor[Any]):
     @visit.register
     def _(self, expr: ex.Assign) -> Any:
         value = self.evaluate(expr.value)
-        self.environment.assign(expr.name, value)
+
+        distance = self.locals.get(expr)
+        if distance is not None:
+            self.environment.assign_at(distance, expr.name, value)
+        else:
+            self.globals.assign(expr.name, value)
         return value
 
     @visit.register
@@ -247,6 +255,17 @@ class Interpreter(Visitor[Any]):
     
     def execute(self, stmt: st.Stmt) -> None:
         stmt.accept(self)
+    
+    def resolve(self, expr: ex.Expr, depth: int) -> None:
+        self.locals[expr] = depth
+
+    def lookup_variable(self, name: Token, expr: ex.Expr) -> Any:
+        distance = self.locals.get(expr)
+        if distance is not None:
+            return self.environment.get_at(distance, name.lexeme)
+        else:
+            return self.globals.get(name)
+
     
     def execute_block(self, statements: list[st.Stmt], environment: Environment) -> None:
         previous = self.environment

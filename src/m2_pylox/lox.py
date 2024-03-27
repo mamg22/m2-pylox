@@ -3,6 +3,7 @@ import sys
 
 from m2_pylox.interpreter import Interpreter, LoxRuntimeError
 from m2_pylox.parser import Parser
+from m2_pylox.resolver import Resolver
 from m2_pylox.scanner import Scanner
 from m2_pylox.tokens import Token, TokenType as TT
 
@@ -34,6 +35,12 @@ class Lox:
         statements = parser.parse()
 
         if self.had_error or not statements:
+            return
+
+        resolver = Resolver(self.interpreter)
+        resolver.resolve(statements)
+
+        if self.had_error:
             return
 
         self.interpreter.interpret(statements)
