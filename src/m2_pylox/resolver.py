@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from enum import Enum, auto
 from functools import singledispatchmethod
-from typing import override, Any
+from typing import override
 
 from m2_pylox import lox
 from m2_pylox.tokens import Token
@@ -22,23 +22,16 @@ class Resolver(Visitor):
         self.scopes = []
         self.current_function = FunctionType.NONE
 
-    @singledispatchmethod
-    def resolve(self, obj: Any) -> None:
-        raise NotImplementedError(f"'{obj.__class__.__name__}' could not be dispatched by resolve()")
+    def resolve(self, node: list[st.Stmt] | st.Stmt | ex.Expr) -> None:
+        match node:
+            case list(statements):
+                for statement in statements:
+                    self.resolve(statement)
+            case st.Stmt() | ex.Expr():
+                node.accept(self)
+            case _:
+                raise NotImplementedError(f"'{node.__class__.__name__}' could not be handled by resolve()")
 
-    @resolve.register(list)
-    def _(self, statements: list[st.Stmt]) -> None:
-        for statement in statements:
-            self.resolve(statement)
-    
-    @resolve.register
-    def _(self, stmt: st.Stmt) -> None:
-        stmt.accept(self)
-    
-    @resolve.register
-    def _(self, expr: ex.Expr) -> None:
-        expr.accept(self)
-    
     def begin_scope(self) -> None:
         self.scopes.append({})
 
