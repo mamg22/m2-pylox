@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from enum import Enum, auto
 from functools import singledispatchmethod
-from typing import override
+from typing import Final, override
 
 from m2_pylox import lox
 from m2_pylox.tokens import Token
@@ -12,9 +12,23 @@ class FunctionType(Enum):
     NONE = auto()
     FUNCTION = auto()
 
+class VariableState(Enum):
+    UNDECLARED = auto()
+    DECLARED = auto()
+    DEFINED = auto()
+    ACCESSED = auto()
+
+class Variable:
+    name: Final[Token]
+    state: VariableState
+
+    def __init__(self, name: Token, state: VariableState) -> None:
+        self.name = name
+        self.state = state
+
 class Resolver(Visitor):
     interpreter: interp.Interpreter
-    scopes: list[dict[str, bool]]
+    scopes: list[dict[str, Variable]]
     current_function: FunctionType
 
     def __init__(self, interpreter: interp.Interpreter) -> None:
@@ -36,13 +50,17 @@ class Resolver(Visitor):
         self.scopes.append({})
 
     def end_scope(self) -> None:
+        top = self.scopes[-1]
+        for var in top.values():
+            if var.state is not VariableState.ACCESSED:
+                lox.get_lox().error(var.name, "Unused variable")
         self.scopes.pop()
     
     @contextmanager
     def scope(self):
         try:
             self.begin_scope()
-            yield
+            yield self.scopes[-1]
         finally:
             self.end_scope()
     
@@ -52,16 +70,20 @@ class Resolver(Visitor):
             if name.lexeme in scope:
                 lox.get_lox().error(name, "Already a variable with this name in this scope")
 
-            scope[name.lexeme] = False
+            scope[name.lexeme] = Variable(name, VariableState.DECLARED)
     
     def define(self, name: Token) -> None:
         if self.scopes:
-            self.scopes[-1][name.lexeme] = True
+            self.scopes[-1][name.lexeme].state = VariableState.DEFINED
     
-    def resolve_local(self, expr: ex.Expr, name: Token) -> None:
+    def resolve_local(self, expr: ex.Expr, name: Token, is_access: bool = True) -> None:
         for i, scope in enumerate(reversed(self.scopes)):
             if name.lexeme in scope:
                 self.interpreter.resolve(expr, i)
+
+                if is_access:
+                    self.scopes[-1][name.lexeme].state = VariableState.ACCESSED
+                return
     
     def resolve_function(self, function: ex.Function, type: FunctionType) -> None:
         enclosing_function = self.current_function
@@ -135,7 +157,7 @@ class Resolver(Visitor):
     @visit.register
     def _(self, expr: ex.Assign) -> None:
         self.resolve(expr.value)
-        self.resolve_local(expr, expr.name)
+        self.resolve_local(expr, expr.name, is_access=False)
     
     @visit.register
     def _(self, expr: ex.Binary) -> None:
@@ -178,8 +200,11 @@ class Resolver(Visitor):
     
     @visit.register
     def _(self, expr: ex.Variable) -> None:
-        if self.scopes and not self.scopes[-1].get(expr.name.lexeme, True):
-            lox.get_lox().error(expr.name,
+        if self.scopes:
+            top = self.scopes[-1]
+            var = top.get(expr.name.lexeme)
+            if var is not None and var.state is VariableState.DECLARED:
+                lox.get_lox().error(expr.name,
                                 "Can't read local variable in its own initializer")
         
         self.resolve_local(expr, expr.name)

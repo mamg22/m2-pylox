@@ -26,8 +26,9 @@ This project currently uses [`rye`](https://rye-up.com/) for dependency and proj
     - `break` statement.
     - Tried to add `continue` too, but the way to handle it conflicts with desugared `for` loops, since the increment becomes part of the loop body, which is skipped by `continue`, causing an infinite loop; maybe I'll add it later with a different approach.
 * Chapter 10
-    - Anonymous (lambda) functions
+    - Anonymous (lambda) functions.
 * Chapter 11
+    - Error on unused local variables.
 
 # Implementation differences
 
