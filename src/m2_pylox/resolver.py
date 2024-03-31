@@ -82,7 +82,7 @@ class Resolver(Visitor):
                 self.interpreter.resolve(expr, i)
 
                 if is_access:
-                    self.scopes[-1][name.lexeme].state = VariableState.ACCESSED
+                    scope[name.lexeme].state = VariableState.ACCESSED
                 return
     
     def resolve_function(self, function: ex.Function, type: FunctionType) -> None:
