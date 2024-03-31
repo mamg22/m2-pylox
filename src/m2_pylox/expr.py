@@ -62,3 +62,18 @@ class Call(Expr):
 class Function(Expr):
     params: list[Token]
     body: list['st.Stmt']
+
+@dataclass(frozen=True)
+class Get(Expr):
+    object: Expr
+    name: Token
+
+@dataclass(frozen=True)
+class Set(Expr):
+    object: Expr
+    name: Token
+    value: Expr
+
+@dataclass(frozen=True)
+class This(Expr):
+    keyword: Token

@@ -5,6 +5,7 @@ from m2_pylox.environment import Environment
 import m2_pylox.expr as ex
 from m2_pylox import lox
 from m2_pylox import function as fn
+from m2_pylox import loxclass as cl
 from m2_pylox import stmt as st
 from m2_pylox.tokens import Token, TokenType as TT, TokenGroup as TG
 from m2_pylox.visitor import Visitor, Visitable
@@ -195,8 +196,44 @@ class Interpreter(Visitor[Any]):
         return fn.LoxFunction(None, expr, self.environment)
     
     @visit.register
+    def _(self, expr: ex.Get) -> Any:
+        obj = self.evaluate(expr.object)
+        if isinstance(obj, cl.LoxInstance):
+            return obj.get(expr.name)
+        
+        raise LoxRuntimeError(expr.name, "Cannot get property, not an instance")
+    
+    @visit.register
+    def _(self, expr: ex.Set) -> Any:
+        obj = self.evaluate(expr.object)
+        
+        if not isinstance(obj, cl.LoxInstance):
+            raise LoxRuntimeError(expr.name, "Cannot set property, not an instance")
+        
+        value = self.evaluate(expr.value)
+        obj.set(expr.name, value)
+        return value
+    
+    @visit.register
+    def _(self, expr: ex.This) -> Any:
+        return self.lookup_variable(expr.keyword, expr)
+    
+    @visit.register
     def _(self, _: st.Break) -> Never:
         raise LoxBreak()
+    
+    @visit.register
+    def _(self, stmt: st.Class) -> None:
+        self.environment.define(stmt.name.lexeme, None)
+
+        methods: dict[str, fn.LoxFunction] = {}
+        for method in stmt.methods:
+            is_init = method.name.lexeme == 'init'
+            function = fn.LoxFunction(method.name.lexeme, method.function, self.environment, is_init)
+            methods[method.name.lexeme] = function
+
+        klass = cl.LoxClass(stmt.name.lexeme, methods)
+        self.environment.assign(stmt.name, klass)
 
     @visit.register
     def _(self, stmt: st.Expression) -> None:

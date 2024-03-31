@@ -67,6 +67,8 @@ class Parser:
     
     def declaration(self) -> st.Stmt | None:
         try:
+            if self.match(TT.CLASS):
+                return self.class_declaration()
             if self.check_next(TT.IDENTIFIER) and self.match(TT.FUN):
                 return self.function("function")
             if self.match(TT.VAR):
@@ -76,6 +78,18 @@ class Parser:
         except ParseError:
             self.synchronize()
             return None
+    
+    def class_declaration(self) -> st.Stmt:
+        name = self.consume(TT.IDENTIFIER, "Expected class name")
+        self.consume(TT.LEFT_BRACE, "Expected '{' before class body")
+
+        methods: list[st.Function] = []
+        while not self.check(TT.RIGHT_BRACE) and not self.at_end():
+            methods.append(self.function("method"))
+        
+        self.consume(TT.RIGHT_BRACE, "Expected '}' after class body")
+
+        return st.Class(name, methods)
     
     def var_declaration(self) -> st.Stmt:
         name = self.consume(TT.IDENTIFIER, "Expected variable name")
@@ -245,6 +259,8 @@ class Parser:
             if isinstance(expr, ex.Variable):
                 name = expr.name
                 return ex.Assign(name, value)
+            elif isinstance(expr, ex.Get):
+                return ex.Set(expr.object, expr.name, value)
             
             self.error(equals, "Invalid assignment target")
 
@@ -294,6 +310,9 @@ class Parser:
         while True:
             if self.match(TT.LEFT_PAREN):
                 expr = self.finish_call(expr)
+            elif self.match(TT.DOT):
+                name = self.consume(TT.IDENTIFIER, "Expected property name after '.'")
+                expr = ex.Get(expr, name)
             else:
                 break
     
@@ -324,6 +343,9 @@ class Parser:
         
         if self.match(TT.NUMBER, TT.STRING):
             return ex.Literal(self.previous().literal)
+        
+        if self.match(TT.THIS):
+            return ex.This(self.previous())
         
         if self.match(TT.IDENTIFIER):
             return ex.Variable(self.previous())

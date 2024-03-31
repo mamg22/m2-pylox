@@ -29,6 +29,7 @@ This project currently uses [`rye`](https://rye-up.com/) for dependency and proj
     - Anonymous (lambda) functions.
 * Chapter 11
     - Error on unused local variables.
+* Chapter 12
 
 # Implementation differences
 

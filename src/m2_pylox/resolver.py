@@ -11,6 +11,12 @@ from m2_pylox import interpreter as interp, stmt as st, expr as ex
 class FunctionType(Enum):
     NONE = auto()
     FUNCTION = auto()
+    INITIALIZER = auto()
+    METHOD = auto()
+
+class ClassType(Enum):
+    NONE = auto()
+    CLASS = auto()
 
 class VariableState(Enum):
     UNDECLARED = auto()
@@ -30,11 +36,13 @@ class Resolver(Visitor):
     interpreter: interp.Interpreter
     scopes: list[dict[str, Variable]]
     current_function: FunctionType
+    current_class: ClassType
 
     def __init__(self, interpreter: interp.Interpreter) -> None:
         self.interpreter = interpreter
         self.scopes = []
         self.current_function = FunctionType.NONE
+        self.current_class = ClassType.NONE
 
     def resolve(self, node: list[st.Stmt] | st.Stmt | ex.Expr) -> None:
         match node:
@@ -112,6 +120,22 @@ class Resolver(Visitor):
         pass
 
     @visit.register
+    def _(self, stmt: st.Class) -> None:
+        enclosing_class = self.current_class
+        self.current_class = ClassType.CLASS
+
+        self.declare(stmt.name)
+        self.define(stmt.name)
+
+        with self.scope() as top:
+            top["this"] = Variable(stmt.name, VariableState.ACCESSED)
+            for method in stmt.methods:
+                declaration = FunctionType.METHOD
+                self.resolve_function(method.function, declaration)
+        
+        self.current_class = enclosing_class
+
+    @visit.register
     def _(self, stmt: st.Expression) -> None:
         self.resolve(stmt.expression)
     
@@ -140,6 +164,8 @@ class Resolver(Visitor):
             lox.get_lox().error(stmt.keyword, "Can't return from top-level code")
 
         if stmt.value is not None:
+            if self.current_function is FunctionType.INITIALIZER:
+                lox.get_lox().error(stmt.keyword, "Can't return from initializer function")
             self.resolve(stmt.value)
     
     @visit.register
@@ -178,6 +204,10 @@ class Resolver(Visitor):
         self.resolve(expr.on_false)
     
     @visit.register
+    def _(self, expr: ex.Get) -> None:
+        self.resolve(expr.object)
+    
+    @visit.register
     def _(self, expr: ex.Function) -> None:
         self.resolve_function(expr, FunctionType.FUNCTION)
         
@@ -194,6 +224,19 @@ class Resolver(Visitor):
         self.resolve(expr.left)
         self.resolve(expr.right)
     
+    @visit.register
+    def _(self, expr: ex.Set) -> None:
+        self.resolve(expr.value)
+        self.resolve(expr.object)
+    
+    @visit.register
+    def _(self, expr: ex.This) -> None:
+        if self.current_class is ClassType.NONE:
+            lox.get_lox().error(expr.keyword, "Can't use 'this' outside of class")
+            return
+
+        self.resolve_local(expr, expr.keyword)
+
     @visit.register
     def _(self, expr: ex.Unary) -> None:
         self.resolve(expr.right)

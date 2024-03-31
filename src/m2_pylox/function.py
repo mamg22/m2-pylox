@@ -1,10 +1,11 @@
 import random
 import time
-from typing import Callable, Protocol, runtime_checkable, Any, Never
+from typing import Callable, Protocol, Self, runtime_checkable, Any, Never
 
 from m2_pylox.environment import Environment
 import m2_pylox.expr as ex
 import m2_pylox.stmt as st
+from m2_pylox import loxclass as cl
 from m2_pylox import interpreter as interp
 
 @runtime_checkable
@@ -27,11 +28,18 @@ class LoxFunction:
     name: str | None
     declaration: ex.Function
     closure: Environment
+    is_initializer: bool
 
-    def __init__(self, name: str | None, declaration: ex.Function, closure: Environment) -> None:
+    def __init__(self,
+                 name: str | None,
+                 declaration: ex.Function,
+                 closure: Environment,
+                 is_initializer: bool = False
+                 ) -> None:
         self.name = name
         self.declaration = declaration
         self.closure = closure
+        self.is_initializer = is_initializer
     
     def call(self, interpreter: 'interp.Interpreter', arguments: list) -> Any:
         environment = Environment(self.closure)
@@ -43,11 +51,19 @@ class LoxFunction:
             interpreter.execute_block(self.declaration.body, environment)
         except Return as ret:
             return ret.value
-
+        finally:
+            if self.is_initializer:
+                return self.closure.get_at(0, 'this')
+        
         return None
     
     def arity(self) -> int:
         return len(self.declaration.params)
+    
+    def bind(self, instance: cl.LoxInstance) -> 'LoxFunction':
+        environment = Environment(self.closure)
+        environment.define("this", instance)
+        return LoxFunction(self.name, self.declaration, environment, self.is_initializer)
 
     def __str__(self) -> str:
         if self.name is not None:

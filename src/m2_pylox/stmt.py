@@ -49,3 +49,8 @@ class Function(Stmt):
 class Return(Stmt):
     keyword: Token
     value: ex.Expr | None
+
+@dataclass(frozen=True)
+class Class(Stmt):
+    name: Token
+    methods: list[Function]
