@@ -215,6 +215,24 @@ class Interpreter(Visitor[Any]):
         return value
     
     @visit.register
+    def _(self, expr: ex.Super) -> Any:
+        distance = self.locals.get(expr)
+        
+        if distance is not None:
+            superclass: cl.LoxClass = self.environment.get_at(distance, "super")
+            obj: cl.LoxInstance = self.environment.get_at(distance - 1, "this")
+            method = superclass.find_method(expr.method.lexeme)
+
+            if method is None:
+                raise LoxRuntimeError(expr.method, f"Undefined property '{expr.method.lexeme}'")
+
+            return method.bind(obj)
+        else:
+            raise Exception("Mismatch between resolved and runtime scopes")
+
+
+    
+    @visit.register
     def _(self, expr: ex.This) -> Any:
         return self.lookup_variable(expr.keyword, expr)
     
@@ -224,7 +242,17 @@ class Interpreter(Visitor[Any]):
     
     @visit.register
     def _(self, stmt: st.Class) -> None:
+        superclass = None
+        if stmt.superclass is not None:
+            superclass = self.evaluate(stmt.superclass)
+            if not isinstance(superclass, cl.LoxClass):
+                raise LoxRuntimeError(stmt.superclass.name, "Superclass must be a class")
+
         self.environment.define(stmt.name.lexeme, None)
+
+        if stmt.superclass is not None:
+            self.environment = Environment(self.environment)
+            self.environment.define("super", superclass)
 
         methods: dict[str, fn.LoxFunction] = {}
         for method in stmt.methods:
@@ -232,7 +260,14 @@ class Interpreter(Visitor[Any]):
             function = fn.LoxFunction(method.name.lexeme, method.function, self.environment, is_init)
             methods[method.name.lexeme] = function
 
-        klass = cl.LoxClass(stmt.name.lexeme, methods)
+        klass = cl.LoxClass(stmt.name.lexeme, superclass, methods)
+
+        if superclass is not None:
+            if self.environment.enclosing is None:
+                raise Exception("Invalid super environment")
+
+            self.environment = self.environment.enclosing
+    
         self.environment.assign(stmt.name, klass)
 
     @visit.register

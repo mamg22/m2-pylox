@@ -53,4 +53,5 @@ class Return(Stmt):
 @dataclass(frozen=True)
 class Class(Stmt):
     name: Token
+    superclass: ex.Variable | None
     methods: list[Function]

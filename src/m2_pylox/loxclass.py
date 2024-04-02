@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Self
 
 from m2_pylox import interpreter as interp
 from m2_pylox import function as fn
@@ -6,10 +6,12 @@ from m2_pylox.tokens import Token
 
 class LoxClass:
     name: str
+    superclass: Self | None
     methods: dict[str, 'fn.LoxFunction']
 
-    def __init__(self, name: str, methods: dict[str, 'fn.LoxFunction']) -> None:
+    def __init__(self, name: str, superclass: Self | None, methods: dict[str, 'fn.LoxFunction']) -> None:
         self.name = name
+        self.superclass = superclass
         self.methods = methods
     
     def __str__(self) -> str:
@@ -31,7 +33,10 @@ class LoxClass:
         return 0
     
     def find_method(self, name: str) -> 'fn.LoxFunction | None':
-        return self.methods.get(name)
+        method = self.methods.get(name)
+        if method is None and self.superclass is not None:
+            return self.superclass.find_method(name)
+        return method
 
 
 class LoxInstance:

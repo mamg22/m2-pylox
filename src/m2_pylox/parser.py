@@ -81,6 +81,13 @@ class Parser:
     
     def class_declaration(self) -> st.Stmt:
         name = self.consume(TT.IDENTIFIER, "Expected class name")
+
+        superclass = None
+        if self.match(TT.LESS):
+            self.consume(TT.IDENTIFIER, "Expected superclass name")
+            superclass = ex.Variable(self.previous())
+        
+
         self.consume(TT.LEFT_BRACE, "Expected '{' before class body")
 
         methods: list[st.Function] = []
@@ -89,7 +96,7 @@ class Parser:
         
         self.consume(TT.RIGHT_BRACE, "Expected '}' after class body")
 
-        return st.Class(name, methods)
+        return st.Class(name, superclass, methods)
     
     def var_declaration(self) -> st.Stmt:
         name = self.consume(TT.IDENTIFIER, "Expected variable name")
@@ -344,6 +351,12 @@ class Parser:
         if self.match(TT.NUMBER, TT.STRING):
             return ex.Literal(self.previous().literal)
         
+        if self.match(TT.SUPER):
+            keyword = self.previous()
+            self.consume(TT.DOT, "Expected '.' after 'super'")
+            method = self.consume(TT.IDENTIFIER, "Expexted superclass method name")
+            return ex.Super(keyword, method)
+
         if self.match(TT.THIS):
             return ex.This(self.previous())
         

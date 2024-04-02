@@ -1,4 +1,4 @@
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from enum import Enum, auto
 from functools import singledispatchmethod
 from typing import Final, override
@@ -17,6 +17,7 @@ class FunctionType(Enum):
 class ClassType(Enum):
     NONE = auto()
     CLASS = auto()
+    SUBCLASS = auto()
 
 class VariableState(Enum):
     UNDECLARED = auto()
@@ -54,8 +55,10 @@ class Resolver(Visitor):
             case _:
                 raise NotImplementedError(f"'{node.__class__.__name__}' could not be handled by resolve()")
 
-    def begin_scope(self) -> None:
-        self.scopes.append({})
+    def begin_scope(self, content: dict[str, Variable] | None = None) -> None:
+        if content is None:
+            content = {}
+        self.scopes.append(content)
 
     def end_scope(self) -> None:
         top = self.scopes[-1]
@@ -65,9 +68,9 @@ class Resolver(Visitor):
         self.scopes.pop()
     
     @contextmanager
-    def scope(self):
+    def scope(self, content: dict[str, Variable] | None = None):
         try:
-            self.begin_scope()
+            self.begin_scope(content)
             yield self.scopes[-1]
         finally:
             self.end_scope()
@@ -127,7 +130,20 @@ class Resolver(Visitor):
         self.declare(stmt.name)
         self.define(stmt.name)
 
-        with self.scope() as top:
+        if stmt.superclass is not None:
+            if stmt.name.lexeme == stmt.superclass.name.lexeme:
+                lox.get_lox().error(stmt.superclass.name, "A class can't inherit from itself")
+
+            self.current_class = ClassType.SUBCLASS
+            self.resolve(stmt.superclass)
+
+            super_scope = self.scope({
+                "super": Variable(stmt.name, VariableState.ACCESSED)
+            })
+        else:
+            super_scope = nullcontext()
+
+        with super_scope as super_scope, self.scope() as top:
             top["this"] = Variable(stmt.name, VariableState.ACCESSED)
             for method in stmt.methods:
                 declaration = FunctionType.METHOD
@@ -228,6 +244,15 @@ class Resolver(Visitor):
     def _(self, expr: ex.Set) -> None:
         self.resolve(expr.value)
         self.resolve(expr.object)
+    
+    @visit.register
+    def _(self, expr: ex.Super) -> None:
+        if self.current_class is ClassType.NONE:
+            lox.get_lox().error(expr.keyword, "Can't use 'super' outside a class")
+        elif self.current_class is not ClassType.SUBCLASS:
+            lox.get_lox().error(expr.keyword, "Can't use 'super' in a class with no superclass")
+
+        self.resolve_local(expr, expr.keyword)
     
     @visit.register
     def _(self, expr: ex.This) -> None:
