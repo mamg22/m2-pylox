@@ -1,3 +1,4 @@
+from enum import Flag, auto
 import random
 import time
 from typing import Callable, Protocol, Self, runtime_checkable, Any, Never
@@ -24,25 +25,25 @@ class Return(Exception):
     def __init__(self, value: Any):
         self.value = value
 
+class Flags(Flag):
+    Initializer = auto()
+    Getter = auto()
 class LoxFunction:
     name: str | None
     declaration: ex.Function
     closure: Environment
-    is_initializer: bool
-    is_getter: bool
+    flags: Flags
 
     def __init__(self,
                  name: str | None,
                  declaration: ex.Function,
                  closure: Environment,
-                 is_initializer: bool = False,
-                 is_getter: bool = False,
+                 flags: Flags = Flags(0)
                  ) -> None:
         self.name = name
         self.declaration = declaration
         self.closure = closure
-        self.is_initializer = is_initializer
-        self.is_getter = is_getter
+        self.flags = flags
     
     def call(self, interpreter: 'interp.Interpreter', arguments: list) -> Any:
         environment = Environment(self.closure)
@@ -55,7 +56,7 @@ class LoxFunction:
         except Return as ret:
             return ret.value
         finally:
-            if self.is_initializer:
+            if Flags.Initializer in self.flags:
                 return self.closure.get_at(0, 'this')
         
         return None
@@ -66,7 +67,7 @@ class LoxFunction:
     def bind(self, instance: cl.LoxInstance) -> 'LoxFunction':
         environment = Environment(self.closure)
         environment.define("this", instance)
-        return LoxFunction(self.name, self.declaration, environment, self.is_initializer, self.is_getter)
+        return LoxFunction(self.name, self.declaration, environment, self.flags)
 
     def __str__(self) -> str:
         if self.name is not None:

@@ -201,7 +201,7 @@ class Interpreter(Visitor[Any]):
         if isinstance(obj, cl.LoxInstance):
             result = obj.get(expr.name)
             
-            if isinstance(result, fn.LoxFunction) and result.is_getter:
+            if isinstance(result, fn.LoxFunction) and fn.Flags.Getter in result.flags:
                 result = result.call(self, [])
             
             return result
@@ -261,7 +261,7 @@ class Interpreter(Visitor[Any]):
 
         class_methods: dict[str, fn.LoxFunction] = {}
         for cmethod in stmt.class_methods:
-            function = fn.LoxFunction(cmethod.name.lexeme, cmethod.function, self.environment, False)
+            function = fn.LoxFunction(cmethod.name.lexeme, cmethod.function, self.environment)
             class_methods[cmethod.name.lexeme] = function
         
         metaclass = cl.LoxClass(
@@ -273,9 +273,13 @@ class Interpreter(Visitor[Any]):
 
         methods: dict[str, fn.LoxFunction] = {}
         for method in stmt.methods:
-            is_init = method.name.lexeme == 'init'
-            is_getter = isinstance(method, st.Getter)
-            function = fn.LoxFunction(method.name.lexeme, method.function, self.environment, is_init, is_getter)
+            flags = fn.Flags(0)
+            if method.name.lexeme == 'init':
+                flags |= fn.Flags.Initializer
+            if isinstance(method, st.Getter):
+                flags |= fn.Flags.Getter
+
+            function = fn.LoxFunction(method.name.lexeme, method.function, self.environment, flags)
             methods[method.name.lexeme] = function
 
         klass = cl.LoxClass(stmt.name.lexeme, metaclass, superclass, methods)
