@@ -199,7 +199,12 @@ class Interpreter(Visitor[Any]):
     def _(self, expr: ex.Get) -> Any:
         obj = self.evaluate(expr.object)
         if isinstance(obj, cl.LoxInstance):
-            return obj.get(expr.name)
+            result = obj.get(expr.name)
+            
+            if isinstance(result, fn.LoxFunction) and result.is_getter:
+                result = result.call(self, [])
+            
+            return result
         
         raise LoxRuntimeError(expr.name, "Cannot get property, not an instance")
     
@@ -269,7 +274,8 @@ class Interpreter(Visitor[Any]):
         methods: dict[str, fn.LoxFunction] = {}
         for method in stmt.methods:
             is_init = method.name.lexeme == 'init'
-            function = fn.LoxFunction(method.name.lexeme, method.function, self.environment, is_init)
+            is_getter = isinstance(method, st.Getter)
+            function = fn.LoxFunction(method.name.lexeme, method.function, self.environment, is_init, is_getter)
             methods[method.name.lexeme] = function
 
         klass = cl.LoxClass(stmt.name.lexeme, metaclass, superclass, methods)

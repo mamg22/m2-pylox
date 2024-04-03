@@ -45,6 +45,9 @@ class Function(Stmt):
     name: Token
     function: ex.Function
 
+class Getter(Function):
+    pass
+
 @dataclass(frozen=True)
 class Return(Stmt):
     keyword: Token

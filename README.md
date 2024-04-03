@@ -31,6 +31,7 @@ This project currently uses [`rye`](https://rye-up.com/) for dependency and proj
     - Error on unused local variables.
 * Chapter 12
     - Class methods (`class` prefix before function definition)
+    - Getter methods (Function name followed by block)
 * Chapter 13
 
 # Implementation differences

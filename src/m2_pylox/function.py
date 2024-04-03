@@ -29,17 +29,20 @@ class LoxFunction:
     declaration: ex.Function
     closure: Environment
     is_initializer: bool
+    is_getter: bool
 
     def __init__(self,
                  name: str | None,
                  declaration: ex.Function,
                  closure: Environment,
-                 is_initializer: bool = False
+                 is_initializer: bool = False,
+                 is_getter: bool = False,
                  ) -> None:
         self.name = name
         self.declaration = declaration
         self.closure = closure
         self.is_initializer = is_initializer
+        self.is_getter = is_getter
     
     def call(self, interpreter: 'interp.Interpreter', arguments: list) -> Any:
         environment = Environment(self.closure)
@@ -63,7 +66,7 @@ class LoxFunction:
     def bind(self, instance: cl.LoxInstance) -> 'LoxFunction':
         environment = Environment(self.closure)
         environment.define("this", instance)
-        return LoxFunction(self.name, self.declaration, environment, self.is_initializer)
+        return LoxFunction(self.name, self.declaration, environment, self.is_initializer, self.is_getter)
 
     def __str__(self) -> str:
         if self.name is not None:

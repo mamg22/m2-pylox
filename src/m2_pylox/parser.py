@@ -95,6 +95,9 @@ class Parser:
         while not self.check(TT.RIGHT_BRACE) and not self.at_end():
             if self.match(TT.CLASS):
                 class_methods.append(self.function("class method"))
+            elif (self.check_next(TT.LEFT_BRACE) and
+                  self.consume(TT.IDENTIFIER, "Expected identifier before getter declaration")):
+                methods.append(self.getter())
             else:
                 methods.append(self.function("method"))
         
@@ -241,6 +244,12 @@ class Parser:
             self.consume(TT.LEFT_BRACE, f"Expected '{{' before {kind} body")
             body = self.block()
             return ex.Function(parameters, body)
+    
+    def getter(self) -> st.Getter:
+        name = self.previous()
+        self.consume(TT.LEFT_BRACE, "Expected '{' before getter body")
+        body = self.block()
+        return st.Getter(name, ex.Function([], body))
     
     def block(self) -> list[st.Stmt]:
         statements: list[st.Stmt] = []
