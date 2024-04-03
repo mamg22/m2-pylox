@@ -1,11 +1,10 @@
 from enum import Flag, auto
 import random
 import time
-from typing import Callable, Protocol, Self, runtime_checkable, Any, Never
+from typing import Callable, Protocol, runtime_checkable, Any, Never
 
 from m2_pylox.environment import Environment
 import m2_pylox.expr as ex
-import m2_pylox.stmt as st
 from m2_pylox import loxclass as cl
 from m2_pylox import interpreter as interp
 
