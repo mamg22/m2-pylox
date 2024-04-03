@@ -1,6 +1,7 @@
 from contextlib import contextmanager, nullcontext
 from enum import Enum, auto
 from functools import singledispatchmethod
+import itertools
 from typing import Final, override
 
 from m2_pylox import lox
@@ -145,7 +146,7 @@ class Resolver(Visitor):
 
         with super_scope as super_scope, self.scope() as top:
             top["this"] = Variable(stmt.name, VariableState.ACCESSED)
-            for method in stmt.methods:
+            for method in itertools.chain(stmt.methods, stmt.class_methods):
                 declaration = FunctionType.METHOD
                 self.resolve_function(method.function, declaration)
         

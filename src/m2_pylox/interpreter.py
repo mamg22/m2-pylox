@@ -254,13 +254,25 @@ class Interpreter(Visitor[Any]):
             self.environment = Environment(self.environment)
             self.environment.define("super", superclass)
 
+        class_methods: dict[str, fn.LoxFunction] = {}
+        for cmethod in stmt.class_methods:
+            function = fn.LoxFunction(cmethod.name.lexeme, cmethod.function, self.environment, False)
+            class_methods[cmethod.name.lexeme] = function
+        
+        metaclass = cl.LoxClass(
+            f'{stmt.name.lexeme} meta',
+            None,
+            superclass and superclass.klass,
+            class_methods
+            )
+
         methods: dict[str, fn.LoxFunction] = {}
         for method in stmt.methods:
             is_init = method.name.lexeme == 'init'
             function = fn.LoxFunction(method.name.lexeme, method.function, self.environment, is_init)
             methods[method.name.lexeme] = function
 
-        klass = cl.LoxClass(stmt.name.lexeme, superclass, methods)
+        klass = cl.LoxClass(stmt.name.lexeme, metaclass, superclass, methods)
 
         if superclass is not None:
             if self.environment.enclosing is None:

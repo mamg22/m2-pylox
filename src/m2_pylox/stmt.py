@@ -55,3 +55,4 @@ class Class(Stmt):
     name: Token
     superclass: ex.Variable | None
     methods: list[Function]
+    class_methods: list[Function]

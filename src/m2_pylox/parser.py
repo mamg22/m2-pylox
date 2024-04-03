@@ -91,12 +91,16 @@ class Parser:
         self.consume(TT.LEFT_BRACE, "Expected '{' before class body")
 
         methods: list[st.Function] = []
+        class_methods: list[st.Function] = []
         while not self.check(TT.RIGHT_BRACE) and not self.at_end():
-            methods.append(self.function("method"))
+            if self.match(TT.CLASS):
+                class_methods.append(self.function("class method"))
+            else:
+                methods.append(self.function("method"))
         
         self.consume(TT.RIGHT_BRACE, "Expected '}' after class body")
 
-        return st.Class(name, superclass, methods)
+        return st.Class(name, superclass, methods, class_methods)
     
     def var_declaration(self) -> st.Stmt:
         name = self.consume(TT.IDENTIFIER, "Expected variable name")

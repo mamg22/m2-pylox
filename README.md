@@ -30,6 +30,7 @@ This project currently uses [`rye`](https://rye-up.com/) for dependency and proj
 * Chapter 11
     - Error on unused local variables.
 * Chapter 12
+    - Class methods (`class` prefix before function definition)
 * Chapter 13
 
 # Implementation differences
