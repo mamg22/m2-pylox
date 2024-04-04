@@ -79,7 +79,7 @@ class Parser:
             self.synchronize()
             return None
     
-    def class_declaration(self) -> st.Stmt:
+    def class_declaration(self) -> st.Class:
         name = self.consume(TT.IDENTIFIER, "Expected class name")
 
         superclass = None
@@ -105,7 +105,7 @@ class Parser:
 
         return st.Class(name, superclass, methods, class_methods)
     
-    def var_declaration(self) -> st.Stmt:
+    def var_declaration(self) -> st.Var:
         name = self.consume(TT.IDENTIFIER, "Expected variable name")
 
         initializer = None
@@ -115,7 +115,7 @@ class Parser:
         self.consume(TT.SEMICOLON, "Expected ';' after variable declaration")
         return st.Var(name, initializer)
     
-    def while_statement(self) -> st.Stmt:
+    def while_statement(self) -> st.While:
         with self.loop_context():
             self.consume(TT.LEFT_PAREN, "Expected '(' after 'while'")
             condition = self.expression()
@@ -142,7 +142,7 @@ class Parser:
 
         return self.expression_statement()
 
-    def break_statement(self) -> st.Stmt:
+    def break_statement(self) -> st.Break:
         previous = self.previous()
         if self.current_context().loop_depth > 0:
             self.consume(TT.SEMICOLON, f"Expected ';' after '{previous.lexeme}'")
@@ -188,7 +188,7 @@ class Parser:
 
             return body
     
-    def if_statement(self) -> st.Stmt:
+    def if_statement(self) -> st.If:
         self.consume(TT.LEFT_PAREN, "Expected '(' after 'if'")
         condition = self.expression()
         self.consume(TT.RIGHT_PAREN, "Expected ')' after if condition")
@@ -200,12 +200,12 @@ class Parser:
         
         return st.If(condition, then_branch, else_branch)
     
-    def print_statement(self) -> st.Stmt:
+    def print_statement(self) -> st.Print:
         value = self.expression()
         self.consume(TT.SEMICOLON, "Expected ';' after value")
         return st.Print(value)
     
-    def return_statement(self) -> st.Stmt:
+    def return_statement(self) -> st.Return:
         keyword = self.previous()
         value: ex.Expr | None = None
         if not self.check(TT.SEMICOLON):
@@ -215,7 +215,7 @@ class Parser:
         return st.Return(keyword, value)
 
     
-    def expression_statement(self) -> st.Stmt:
+    def expression_statement(self) -> st.Expression:
         expr = self.expression()
         self.consume(TT.SEMICOLON, "Expected ';' after expression")
         return st.Expression(expr)
