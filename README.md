@@ -12,7 +12,6 @@ This project currently uses [`rye`](https://rye-up.com/) for dependency and proj
 * Chapter 5
     - Reverse Polish Notation (RPN) AST printer
 * Chapter 6
-    - Generic method to handle left-associative binary operators (Not in challenges section, mentioned after defining `comparison()`)
     - Comma operator `,`
     - Ternary operator `?:`
     - Error productions for binary operators missing left side expression
@@ -39,3 +38,9 @@ This project currently uses [`rye`](https://rye-up.com/) for dependency and proj
 There are some changes in comparison with the reference implementation provided in the book.
 
 * No AST generator: Two of the main issues the book's AST generator deals with can be easily be solved with standard library functionality: The data and contructor definition are simply dataclasses; the `accept()` definition is provided by inheritance, with the `visit()` method selecting the implementation based on the type of the passed parameter using `functools.singledispatchmethod` (which can easily be replaced by a dispatching function using a `match` or `isinstance` to select the correct function).
+
+# Additional features
+
+* Native functions
+    - `input(prompt: String)`: Read a line from stdin and return it as a string, showing `prompt` before asking for input.
+    - `randint(min: Number, max: Number)`: Pick a random number between `min` and `max`, both included.
