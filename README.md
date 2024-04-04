@@ -23,7 +23,6 @@ This project currently uses [`rye`](https://rye-up.com/) for dependency and proj
     - Throw runtime error on uninitialized variable access.
 * Chapter 9
     - `break` statement.
-    - Tried to add `continue` too, but the way to handle it conflicts with desugared `for` loops, since the increment becomes part of the loop body, which is skipped by `continue`, causing an infinite loop; maybe I'll add it later with a different approach.
 * Chapter 10
     - Anonymous (lambda) functions.
 * Chapter 11
@@ -45,3 +44,4 @@ There are some changes in comparison with the reference implementation provided 
 * Native functions
     - `input(prompt: String)`: Read a line from stdin and return it as a string, showing `prompt` before asking for input.
     - `randint(min: Number, max: Number)`: Pick a random number between `min` and `max`, both included.
+* `continue` statement

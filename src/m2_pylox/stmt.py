@@ -44,8 +44,8 @@ class For(Stmt):
     body: Stmt
 
 @dataclass(frozen=True)
-class Break(Stmt):
-    pass
+class ControlFlow(Stmt):
+    keyword: Token
 
 @dataclass(frozen=True)
 class Function(Stmt):

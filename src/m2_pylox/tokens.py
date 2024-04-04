@@ -33,6 +33,7 @@ class TokenType(Enum):
     AND = "and"
     BREAK = "break"
     CLASS = "class"
+    CONTINUE = "continue"
     ELSE = "else"
     FALSE = "false"
     FUN = "fun"

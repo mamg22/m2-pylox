@@ -120,7 +120,7 @@ class Resolver(Visitor):
             self.resolve(stmt.statements)
     
     @visit.register
-    def _(self, stmt: st.Break) -> None:
+    def _(self, stmt: st.ControlFlow) -> None:
         pass
 
     @visit.register

@@ -21,6 +21,9 @@ class LoxRuntimeError(Exception):
 class LoxBreak(Exception):
     pass
 
+class LoxContinue(Exception):
+    pass
+
 class Interpreter(Visitor[Any]):
     globals: Environment
     environment: Environment
@@ -242,8 +245,14 @@ class Interpreter(Visitor[Any]):
         return self.lookup_variable(expr.keyword, expr)
     
     @visit.register
-    def _(self, _: st.Break) -> Never:
-        raise LoxBreak()
+    def _(self, stmt: st.ControlFlow) -> Never:
+        match stmt.keyword.type:
+            case TT.BREAK:
+                raise LoxBreak()
+            case TT.CONTINUE:
+                raise LoxContinue()
+            case _:
+                raise NotImplementedError(f"Cannot handle '{stmt.keyword.lexeme}'")
     
     @visit.register
     def _(self, stmt: st.Class) -> None:
@@ -305,6 +314,8 @@ class Interpreter(Visitor[Any]):
                 self.execute(stmt.body)
             except LoxBreak:
                 break
+            except LoxContinue:
+                continue
             finally:
                 if stmt.increment is not None:
                     self.evaluate(stmt.increment)
@@ -349,6 +360,8 @@ class Interpreter(Visitor[Any]):
                 self.execute(stmt.body)
             except LoxBreak:
                 break
+            except LoxContinue:
+                continue
 
     @visit.register
     def _(self, stmt: st.Block) -> None:

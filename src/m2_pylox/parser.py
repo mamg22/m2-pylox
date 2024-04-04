@@ -125,8 +125,8 @@ class Parser:
             return st.While(condition, body)
     
     def statement(self) -> st.Stmt:
-        if self.match(TT.BREAK):
-            return self.break_statement()
+        if self.match(TT.BREAK, TT.CONTINUE):
+            return self.control_flow_statement()
         if self.match(TT.FOR):
             return self.for_statement()
         if self.match(TT.IF):
@@ -142,13 +142,13 @@ class Parser:
 
         return self.expression_statement()
 
-    def break_statement(self) -> st.Break:
+    def control_flow_statement(self) -> st.ControlFlow:
         previous = self.previous()
         if self.current_context().loop_depth > 0:
             self.consume(TT.SEMICOLON, f"Expected ';' after '{previous.lexeme}'")
-            return st.Break()
+            return st.ControlFlow(previous)
         else:
-            raise self.error(self.previous(), "Control flow statement used outside loop")
+            raise self.error(previous, "Control flow statement used outside loop")
     
     def for_statement(self) -> st.For:
         with self.loop_context():
