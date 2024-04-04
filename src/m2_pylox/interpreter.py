@@ -297,6 +297,19 @@ class Interpreter(Visitor[Any]):
         self.evaluate(stmt.expression)
     
     @visit.register
+    def _(self, stmt: st.For) -> None:
+        if stmt.initializer is not None:
+            self.execute(stmt.initializer)
+        while stmt.condition is None or self.is_truthy(self.evaluate(stmt.condition)):
+            try:
+                self.execute(stmt.body)
+            except LoxBreak:
+                break
+            finally:
+                if stmt.increment is not None:
+                    self.evaluate(stmt.increment)
+    
+    @visit.register
     def _(self, stmt: st.Function) -> None:
         function = fn.LoxFunction(stmt.name.lexeme, stmt.function, self.environment)
         self.environment.define(stmt.name.lexeme, function)

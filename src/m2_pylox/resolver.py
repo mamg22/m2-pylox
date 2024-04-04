@@ -155,6 +155,12 @@ class Resolver(Visitor):
     @visit.register
     def _(self, stmt: st.Expression) -> None:
         self.resolve(stmt.expression)
+
+    @visit.register
+    def _(self, stmt: st.For) -> None:
+        for component in filter(None, (stmt.initializer, stmt.condition, stmt.increment)):
+            self.resolve(component)
+        self.resolve(stmt.body)
     
     @visit.register
     def _(self, stmt: st.Function) -> None:

@@ -150,7 +150,7 @@ class Parser:
         else:
             raise self.error(self.previous(), "Control flow statement used outside loop")
     
-    def for_statement(self) -> st.Stmt:
+    def for_statement(self) -> st.For:
         with self.loop_context():
             self.consume(TT.LEFT_PAREN, "Expected '(' after 'for'")
 
@@ -175,18 +175,7 @@ class Parser:
 
             body = self.statement()
 
-            if increment is not None:
-                body = st.Block([body, st.Expression(increment)])
-            
-            if condition is None:
-                condition = ex.Literal(True)
-
-            body = st.While(condition, body)
-
-            if initializer is not None:
-                body = st.Block([initializer, body])
-
-            return body
+            return st.For(initializer, condition, increment, body)
     
     def if_statement(self) -> st.If:
         self.consume(TT.LEFT_PAREN, "Expected '(' after 'if'")

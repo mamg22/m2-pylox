@@ -38,6 +38,7 @@ This project currently uses [`rye`](https://rye-up.com/) for dependency and proj
 There are some changes in comparison with the reference implementation provided in the book.
 
 * No AST generator: Two of the main issues the book's AST generator deals with can be easily be solved with standard library functionality: The data and contructor definition are simply dataclasses; the `accept()` definition is provided by inheritance, with the `visit()` method selecting the implementation based on the type of the passed parameter using `functools.singledispatchmethod` (which can easily be replaced by a dispatching function using a `match` or `isinstance` to select the correct function).
+* Unsugared `for` loop: The `for` loop in this implementation isn't syntactic sugar for a block with a while loop; instead, it is a different statement type to allow better flexibility.
 
 # Additional features
 

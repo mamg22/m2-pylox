@@ -37,6 +37,13 @@ class While(Stmt):
     body: Stmt
 
 @dataclass(frozen=True)
+class For(Stmt):
+    initializer: Var | Expression | None
+    condition: ex.Expr | None
+    increment: ex.Expr | None
+    body: Stmt
+
+@dataclass(frozen=True)
 class Break(Stmt):
     pass
 
