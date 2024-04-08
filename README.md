@@ -31,6 +31,7 @@ This project currently uses [`rye`](https://rye-up.com/) for dependency and proj
     - Class methods (`class` prefix before function definition)
     - Getter methods (Function name followed by block)
 * Chapter 13
+    - Code reuse mechanism: Traits, implementation like PHP. See additional features section for more details.
 
 # Implementation differences
 
@@ -44,4 +45,8 @@ There are some changes in comparison with the reference implementation provided 
 * Native functions
     - `input(prompt: String)`: Read a line from stdin and return it as a string, showing `prompt` before asking for input.
     - `randint(min: Number, max: Number)`: Pick a random number between `min` and `max`, both included.
-* `continue` statement
+* `continue` statement.
+* `trait` and `use`.
+    - Declare a trait using `trait` and providing a class body; traits cannot inherit, but can be extended by using other traits.
+    - Include traits in classes or other traits via the `use` statement, this copies the trait's methods over to the class/trait using it.
+    - An `use` statement can indicate one or more traits separated by commas, e.g. `use TraitA, TraitB, TraitC;`.

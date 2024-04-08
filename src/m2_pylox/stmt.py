@@ -64,5 +64,13 @@ class Return(Stmt):
 class Class(Stmt):
     name: Token
     superclass: ex.Variable | None
+    traits: list[ex.Variable]
+    methods: list[Function]
+    class_methods: list[Function]
+
+@dataclass(frozen=True)
+class Trait(Stmt):
+    name: Token
+    traits: list[ex.Variable]
     methods: list[Function]
     class_methods: list[Function]

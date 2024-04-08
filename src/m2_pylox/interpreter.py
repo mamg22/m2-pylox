@@ -268,7 +268,8 @@ class Interpreter(Visitor[Any]):
             self.environment = Environment(self.environment)
             self.environment.define("super", superclass)
 
-        class_methods: dict[str, fn.LoxFunction] = {}
+        methods, class_methods = self.use_traits(stmt.traits)
+
         for cmethod in stmt.class_methods:
             function = fn.LoxFunction(cmethod.name.lexeme, cmethod.function, self.environment)
             class_methods[cmethod.name.lexeme] = function
@@ -280,7 +281,6 @@ class Interpreter(Visitor[Any]):
             class_methods
             )
 
-        methods: dict[str, fn.LoxFunction] = {}
         for method in stmt.methods:
             flags = fn.Flags(0)
             if method.name.lexeme == 'init':
@@ -344,6 +344,35 @@ class Interpreter(Visitor[Any]):
             value = self.evaluate(stmt.value)
 
         raise fn.Return(value)
+
+    @visit.register
+    def _(self, stmt: st.Trait) -> None:
+        self.environment.define(stmt.name.lexeme, None)
+
+        methods, class_methods = self.use_traits(stmt.traits)
+
+        for cmethod in stmt.class_methods:
+            if cmethod.name.lexeme in class_methods:
+                raise LoxRuntimeError(cmethod.name, f"A previously used trait already provides class method '{cmethod.name.lexeme}'")
+            function = fn.LoxFunction(cmethod.name.lexeme, cmethod.function, self.environment)
+            class_methods[cmethod.name.lexeme] = function
+        
+        for method in stmt.methods:
+            if method.name.lexeme in methods:
+                raise LoxRuntimeError(method.name, f"A previously used trait already provides method '{method.name.lexeme}'")
+
+            flags = fn.Flags(0)
+            if method.name.lexeme == 'init':
+                flags |= fn.Flags.Initializer
+            if isinstance(method, st.Getter):
+                flags |= fn.Flags.Getter
+
+            function = fn.LoxFunction(method.name.lexeme, method.function, self.environment, flags)
+            methods[method.name.lexeme] = function
+
+        trait = cl.LoxTrait(stmt.name.lexeme, methods, class_methods)
+
+        self.environment.assign(stmt.name, trait)
     
     @visit.register
     def _(self, stmt: st.Var) -> None:
@@ -418,3 +447,26 @@ class Interpreter(Visitor[Any]):
                 return str(int(num))
             case _:
                 return str(obj)
+
+    def use_traits(self, traits: list[ex.Variable]) -> tuple[dict[str, fn.LoxFunction], dict[str, fn.LoxFunction]]:
+        methods: dict[str, fn.LoxFunction] = {}
+        class_methods: dict[str, fn.LoxFunction] = {}
+
+        for trait_var in traits:
+            trait = self.evaluate(trait_var)
+            if not isinstance(trait, cl.LoxTrait):
+                raise LoxRuntimeError(trait_var.name, f"'{trait_var.name.lexeme}' is not a trait")
+            
+            for method_name in trait.methods:
+                if method_name in methods:
+                    raise LoxRuntimeError(trait_var.name, f"A previously used trait already provides method '{method_name}'")
+                
+            methods |= trait.methods
+            
+            for method_name in trait.class_methods:
+                if method_name in class_methods:
+                    raise LoxRuntimeError(trait_var.name, f"A previously used trait already provides class method '{method_name}'")
+                
+            class_methods |= trait.class_methods
+
+        return methods, class_methods

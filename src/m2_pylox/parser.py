@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Callable
+from typing import Callable, NamedTuple
 
 import m2_pylox.expr as ex
 from m2_pylox import lox
@@ -71,6 +71,8 @@ class Parser:
                 return self.class_declaration()
             if self.check_next(TT.IDENTIFIER) and self.match(TT.FUN):
                 return self.function("function")
+            if self.match(TT.TRAIT):
+                return self.trait_declaration()
             if self.match(TT.VAR):
                 return self.var_declaration()
             
@@ -79,31 +81,67 @@ class Parser:
             self.synchronize()
             return None
     
+    class ClassBody(NamedTuple):
+        name: Token
+        superclass: ex.Variable | None
+        traits: list[ex.Variable]
+        methods: list[st.Function]
+        class_methods: list[st.Function]
+    
     def class_declaration(self) -> st.Class:
-        name = self.consume(TT.IDENTIFIER, "Expected class name")
+        body = self.class_body("class", can_inherit=True)
+        return st.Class(body.name, body.superclass, body.traits, body.methods, body.class_methods)
+    
+    def trait_declaration(self) -> st.Trait:
+        body = self.class_body("trait", can_inherit=False)
+        return st.Trait(body.name, body.traits, body.methods, body.class_methods)
+    
+    def class_body(self, kind: str, can_inherit: bool) -> ClassBody:
+        name = self.consume(TT.IDENTIFIER, f"Expected {kind} name")
 
         superclass = None
         if self.match(TT.LESS):
-            self.consume(TT.IDENTIFIER, "Expected superclass name")
-            superclass = ex.Variable(self.previous())
+            if can_inherit:
+                self.consume(TT.IDENTIFIER, f"Expected super{kind} name")
+                superclass = ex.Variable(self.previous())
+            else:
+                self.consume(TT.IDENTIFIER, "Expected identifier")
+                self.error(self.previous(), f"Cannot inherit in {kind}")
         
 
-        self.consume(TT.LEFT_BRACE, "Expected '{' before class body")
+        self.consume(TT.LEFT_BRACE, f"Expected '{{' before {kind} body")
 
+        traits: list[ex.Variable] = []
         methods: list[st.Function] = []
         class_methods: list[st.Function] = []
         while not self.check(TT.RIGHT_BRACE) and not self.at_end():
             if self.match(TT.CLASS):
-                class_methods.append(self.function("class method"))
+                class_methods.append(self.function(f"{kind} method"))
             elif (self.check_next(TT.LEFT_BRACE) and
                   self.consume(TT.IDENTIFIER, "Expected identifier before getter declaration")):
                 methods.append(self.getter())
+            elif self.match(TT.USE):
+                traits.extend(self.use_declaration())
             else:
                 methods.append(self.function("method"))
         
-        self.consume(TT.RIGHT_BRACE, "Expected '}' after class body")
+        self.consume(TT.RIGHT_BRACE, f"Expected '}}' after {kind} body")
 
-        return st.Class(name, superclass, methods, class_methods)
+        return self.ClassBody(name, superclass, traits, methods, class_methods)
+
+    def use_declaration(self) -> list[ex.Variable]:
+        trait_list: list[ex.Variable] = []
+
+        trait = self.consume(TT.IDENTIFIER, "Expected trait name")
+        trait_list.append(ex.Variable(trait))
+
+        while self.match(TT.COMMA):
+            trait = self.consume(TT.IDENTIFIER, "Expected trait name")
+            trait_list.append(ex.Variable(trait))
+        
+        self.consume(TT.SEMICOLON, "Expected ';' after use declaration")
+
+        return trait_list
     
     def var_declaration(self) -> st.Var:
         name = self.consume(TT.IDENTIFIER, "Expected variable name")

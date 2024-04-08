@@ -19,6 +19,7 @@ class ClassType(Enum):
     NONE = auto()
     CLASS = auto()
     SUBCLASS = auto()
+    TRAIT = auto()
 
 class VariableState(Enum):
     UNDECLARED = auto()
@@ -149,6 +150,9 @@ class Resolver(Visitor):
             for method in itertools.chain(stmt.methods, stmt.class_methods):
                 declaration = FunctionType.METHOD
                 self.resolve_function(method.function, declaration)
+            
+            for trait in stmt.traits:
+                self.resolve(trait)
         
         self.current_class = enclosing_class
 
@@ -190,6 +194,27 @@ class Resolver(Visitor):
             if self.current_function is FunctionType.INITIALIZER:
                 lox.get_lox().error(stmt.keyword, "Can't return from initializer function")
             self.resolve(stmt.value)
+    
+    @visit.register
+    def _(self, stmt: st.Trait) -> None:
+        enclosing_class = self.current_class
+        self.current_class = ClassType.TRAIT
+
+        self.declare(stmt.name)
+        self.define(stmt.name)
+
+        with self.scope() as top:
+            top["this"] = Variable(stmt.name, VariableState.ACCESSED)
+            for method in itertools.chain(stmt.methods, stmt.class_methods):
+                declaration = FunctionType.METHOD
+                self.resolve_function(method.function, declaration)
+
+            for trait in stmt.traits:
+                if trait.name.lexeme == stmt.name.lexeme:
+                    lox.get_lox().error(trait.name, "Trait cannot use itself")
+                self.resolve(trait)
+        
+        self.current_class = enclosing_class
     
     @visit.register
     def _(self, stmt: st.Var) -> None:
@@ -256,6 +281,8 @@ class Resolver(Visitor):
     def _(self, expr: ex.Super) -> None:
         if self.current_class is ClassType.NONE:
             lox.get_lox().error(expr.keyword, "Can't use 'super' outside a class")
+        elif self.current_class is ClassType.TRAIT:
+            lox.get_lox().error(expr.keyword, "Can't use 'super' in traits")
         elif self.current_class is not ClassType.SUBCLASS:
             lox.get_lox().error(expr.keyword, "Can't use 'super' in a class with no superclass")
 

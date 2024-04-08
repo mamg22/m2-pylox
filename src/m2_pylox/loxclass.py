@@ -68,3 +68,21 @@ class LoxClass(LoxInstance):
         if method is None and self.superclass is not None:
             return self.superclass.find_method(name)
         return method
+
+class LoxTrait:
+    name: str
+    methods: dict[str, 'fn.LoxFunction']
+    class_methods: dict[str, 'fn.LoxFunction']
+
+    def __init__(
+        self,
+        name: str,
+        methods: dict[str, "fn.LoxFunction"],
+        class_methods: dict[str, "fn.LoxFunction"],
+    ) -> None:
+        self.name = name
+        self.methods = methods
+        self.class_methods = class_methods
+
+    def __str__(self) -> str:
+        return f"<trait {self.name}>"

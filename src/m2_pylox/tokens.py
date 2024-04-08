@@ -45,7 +45,9 @@ class TokenType(Enum):
     RETURN = "return"
     SUPER = "super"
     THIS = "this"
+    TRAIT = "trait"
     TRUE = "true"
+    USE = "use"
     VAR = "var"
     WHILE = "while"
 
